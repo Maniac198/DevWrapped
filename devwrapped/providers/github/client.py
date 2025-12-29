@@ -65,13 +65,22 @@ class GitHubClient:
         since = f"{year}-01-01T00:00:00Z"
         until = f"{year}-12-31T23:59:59Z"
 
-        commits = self.get(
-            f"/repos/{owner}/{repo}/commits",
-            params={
-                "since": since,
-                "until": until,
-                "per_page": 1,
-            },
-        )
+        try:
+            commits = self.get(
+                f"/repos/{owner}/{repo}/commits",
+                params={
+                    "since": since,
+                    "until": until,
+                    "per_page": 1,
+                },
+            )
+            return bool(commits)
 
-        return bool(commits)
+        except RuntimeError as e:
+            # GitHub returns 409 for empty repositories
+            if "409" in str(e):
+                return False
+
+            # Other errors: treat as inactive but do not crash
+            return False
+
