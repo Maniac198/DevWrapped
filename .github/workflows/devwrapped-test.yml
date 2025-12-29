@@ -1,0 +1,19 @@
+name: DevWrapped Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-devwrapped:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Run DevWrapped Action
+        uses: ./.github/actions/devwrapped
+        with:
+          year: 2024
+          owner: Maniac198
+          output: both
