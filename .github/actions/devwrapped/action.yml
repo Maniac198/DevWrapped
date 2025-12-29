@@ -27,7 +27,7 @@ runs:
 
     - name: Install DevWrapped
       run: |
-        pip install devwrapped
+        pip install .
       shell: bash
 
     - name: Generate DevWrapped
