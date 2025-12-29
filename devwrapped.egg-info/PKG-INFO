@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: devwrapped
+Version: 0.1.0
+Summary: Spotify Wrapped-style year-end stats for developers
+Author: Manish Choudhary
+License-Expression: Apache-2.0
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: typer>=0.12.0
+Requires-Dist: rich>=13.7.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: jinja2>=3.1.3
+
+# DevWrapped 🚀
+
+Spotify Wrapped-style year-end stats for developers.
+
+## Features (Planned)
+- GitHub, GitLab, Bitbucket, Gerrit support
+- Privacy-first (metadata only)
+- Local CLI or CI-based execution
+- JSON & HTML output
+
+## Usage
+```bash
+devwrapped generate --provider github --year 2025

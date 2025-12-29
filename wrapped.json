@@ -1,0 +1,141 @@
+{
+  "version": "0.1.0",
+  "year": 2024,
+  "provider": "github",
+  "generated_at": "2025-12-29T11:32:27.049861+00:00",
+  "metrics": {
+    "total_commits": 12,
+    "active_days": 2,
+    "busiest_day": "2024-10-01",
+    "most_active_hour": 17,
+    "commits_per_month": {
+      "09": 6,
+      "10": 6
+    },
+    "top_repos": {
+      "Maniac198/ZipCrypt": 12
+    }
+  },
+  "events": [
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-10-01T17:41:42+00:00",
+      "metadata": {
+        "sha": "27d951aa21b82b7135317d11041c4ccab6bb81ff",
+        "message": "Merge pull request #1 from Maniac198/feature/download"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-10-01T17:39:16+00:00",
+      "metadata": {
+        "sha": "1dddc8333b52be9a39c1d6f4b9054c64fef8825d",
+        "message": "download buttons added"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-10-01T17:25:57+00:00",
+      "metadata": {
+        "sha": "06b8901eddfcb29847a0ef0e929829c38805b6bc",
+        "message": "Download as a file feature backend"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-09-29T13:27:30+00:00",
+      "metadata": {
+        "sha": "b56e98764646c615a9beccb0c164495c11b27669",
+        "message": "Create README.md"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-09-29T13:22:26+00:00",
+      "metadata": {
+        "sha": "472ef2226f88864b68cc3c3f1dd69c958bebaed0",
+        "message": "Frontend in React using vite"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-09-29T13:20:32+00:00",
+      "metadata": {
+        "sha": "6557f7e6e8a7bf0a3f5ca5be26fa810c4649f82d",
+        "message": "Backend with huffman and AES"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-10-01T17:41:42+00:00",
+      "metadata": {
+        "sha": "27d951aa21b82b7135317d11041c4ccab6bb81ff",
+        "message": "Merge pull request #1 from Maniac198/feature/download"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-10-01T17:39:16+00:00",
+      "metadata": {
+        "sha": "1dddc8333b52be9a39c1d6f4b9054c64fef8825d",
+        "message": "download buttons added"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-10-01T17:25:57+00:00",
+      "metadata": {
+        "sha": "06b8901eddfcb29847a0ef0e929829c38805b6bc",
+        "message": "Download as a file feature backend"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-09-29T13:27:30+00:00",
+      "metadata": {
+        "sha": "b56e98764646c615a9beccb0c164495c11b27669",
+        "message": "Create README.md"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-09-29T13:22:26+00:00",
+      "metadata": {
+        "sha": "472ef2226f88864b68cc3c3f1dd69c958bebaed0",
+        "message": "Frontend in React using vite"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ZipCrypt",
+      "timestamp": "2024-09-29T13:20:32+00:00",
+      "metadata": {
+        "sha": "6557f7e6e8a7bf0a3f5ca5be26fa810c4649f82d",
+        "message": "Backend with huffman and AES"
+      }
+    }
+  ]
+}

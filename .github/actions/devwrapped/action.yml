@@ -1,0 +1,53 @@
+name: "DevWrapped"
+description: "Generate Spotify Wrapped-style year-end developer stats"
+
+inputs:
+  year:
+    description: "Year to generate Wrapped for"
+    required: true
+
+  owner:
+    description: "GitHub username or org"
+    required: true
+
+  output:
+    description: "Output format (json, html, or both)"
+    default: "both"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+
+    - name: Install DevWrapped
+      run: |
+        pip install devwrapped
+      shell: bash
+
+    - name: Generate DevWrapped
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        if [ "${{ inputs.output }}" = "json" ]; then
+          devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.json
+        elif [ "${{ inputs.output }}" = "html" ]; then
+          devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.html
+        else
+          devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.json
+          devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.html
+        fi
+      shell: bash
+
+    - name: Upload Wrapped artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: devwrapped-${{ inputs.year }}
+        path: |
+          wrapped.json
+          wrapped.html

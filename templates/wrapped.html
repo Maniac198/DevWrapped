@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DevWrapped {{ year }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 2rem;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background: #020617;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #1e293b;
+    }
+
+    .card h2 {
+      font-size: 2rem;
+      margin: 0;
+    }
+
+    .label {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .section {
+      margin-top: 3rem;
+    }
+
+    .bar {
+      background: #1e293b;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      background: #22c55e;
+      padding: 0.4rem;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>DevWrapped {{ year }}</h1>
+  <div class="subtitle">
+    {{ provider }} · Generated {{ generated_at }}
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <h2>{{ metrics.total_commits }}</h2>
+      <div class="label">Total Commits</div>
+    </div>
+
+    <div class="card">
+      <h2>{{ metrics.active_days }}</h2>
+      <div class="label">Active Days</div>
+    </div>
+
+    <div class="card">
+      <h2>{{ metrics.most_active_hour }}:00</h2>
+      <div class="label">Most Active Hour</div>
+    </div>
+
+    <div class="card">
+      <h2>{{ metrics.busiest_day }}</h2>
+      <div class="label">Busiest Day</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Commits per Month</h2>
+    {% for month, count in metrics.commits_per_month.items() %}
+      <div class="bar">
+        <div class="bar-fill" style="width: {{ count * 10 }}%">
+          {{ month }} — {{ count }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="section">
+    <h2>Top Repositories</h2>
+    {% for repo, count in metrics.top_repos.items() %}
+      <div class="bar">
+        <div class="bar-fill" style="width: {{ count * 10 }}%">
+          {{ repo }} — {{ count }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="section">
+    <h2>Your Year in Stories</h2>
+    {% for story in stories %}
+      <div class="card">
+        <h3>{{ story.emoji }} {{ story.title }}</h3>
+        <p>{{ story.text }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+</body>
+</html>

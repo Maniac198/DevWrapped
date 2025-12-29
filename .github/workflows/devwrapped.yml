@@ -1,0 +1,16 @@
+name: DevWrapped
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 1 1 *"   # Jan 1 every year
+
+jobs:
+  wrapped:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Maniac198/devwrapped/.github/actions/devwrapped@main
+        with:
+          year: 2024
+          owner: Maniac198
+          output: both
