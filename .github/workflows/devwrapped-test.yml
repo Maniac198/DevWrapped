@@ -11,6 +11,9 @@ jobs:
       contents: read
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Run DevWrapped Action
         uses: ./.github/actions/devwrapped
         with:
