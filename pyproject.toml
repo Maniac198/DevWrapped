@@ -25,7 +25,7 @@ dependencies = [
 devwrapped = "devwrapped.cli:app"
 
 [tool.setuptools]
-packages = ["devwrapped"]
+packages = { find = {} }
 
 [tool.setuptools.package-data]
 devwrapped = ["../templates/*.html"]
