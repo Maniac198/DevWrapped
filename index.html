@@ -67,7 +67,7 @@
 <body>
   <h1>DevWrapped 2024</h1>
   <div class="subtitle">
-    github · Generated 2026-01-02 07:11 UTC
+    github · Generated 2026-01-02 08:28 UTC
   </div>
 
   
@@ -220,29 +220,34 @@
   </div>
 
   
-  <div class="card">
-    <h2>🔗 Share your DevWrapped</h2>
+    <div class="card">
+      <h2>🔗 Share your DevWrapped</h2>
 
-    <p><strong>Message</strong></p>
-    <pre id="share-text">I&#39;m an ⚡ Explorer — here’s my DevWrapped 2024</pre>
+      <p><strong>Message</strong></p>
+      <pre id="share-text">I&#39;m an ⚡ Explorer — here’s my DevWrapped 2024</pre>
 
-    <p><strong>Link</strong></p>
-    <pre id="share-url">https://Maniac198.github.io/DevWrapped/</pre>
+      <p><strong>Link</strong></p>
+      <pre id="share-url">https://Maniac198.github.io/DevWrapped/${DEVWRAPPED_YEAR}/</pre>
 
-    <button onclick="copyShare()">Copy</button>
-  </div>
+      <button onclick="copyShare()">Copy</button>
+    </div>
 
-  <script>
-    function copyShare() {
-      const text = document.getElementById("share-text").innerText +
-                   "\n" +
-                   document.getElementById("share-url").innerText;
-      navigator.clipboard.writeText(text);
-      alert("Copied!");
-    }
-  </script>
+    <script>
+      function copyShare() {
+        const text = document.getElementById("share-text").innerText +
+                    "\n" +
+                    document.getElementById("share-url").innerText;
+        navigator.clipboard.writeText(text);
+        alert("Copied!");
+      }
+    </script>
+  
 
-
+  <h2>Your DevWrapped years</h2>
+  <ul>
+    <li><a href="/2024/">2024</a></li>
+    <li><a href="/2023/">2023</a></li>
+  </ul>
 
 </body>
 </html>
