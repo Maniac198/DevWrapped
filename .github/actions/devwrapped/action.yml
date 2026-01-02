@@ -32,7 +32,7 @@ runs:
     - name: Generate DevWrapped
       env:
         GITHUB_TOKEN: ${{ github.token }}
-        DEVWRAPPED_SHARE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        DEVWRAPPED_SHARE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${DEVWRAPPED_YEAR}/
       run: |
         if [ "${{ inputs.output }}" = "json" ]; then
           devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.json
@@ -46,9 +46,11 @@ runs:
 
     - name: Prepare GitHub Pages content
       run: |
-        mkdir public
-        cp wrapped.html public/index.html
+        YEAR=${DEVWRAPPED_YEAR}
+        mkdir -p public/$YEAR
+        cp wrapped.html public/$YEAR/index.html
       shell: bash
+
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4

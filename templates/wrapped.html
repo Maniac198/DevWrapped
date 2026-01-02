@@ -133,29 +133,34 @@
   </div>
 
   {% if share_text and share_url %}
-  <div class="card">
-    <h2>🔗 Share your DevWrapped</h2>
+    <div class="card">
+      <h2>🔗 Share your DevWrapped</h2>
 
-    <p><strong>Message</strong></p>
-    <pre id="share-text">{{ share_text }}</pre>
+      <p><strong>Message</strong></p>
+      <pre id="share-text">{{ share_text }}</pre>
 
-    <p><strong>Link</strong></p>
-    <pre id="share-url">{{ share_url }}</pre>
+      <p><strong>Link</strong></p>
+      <pre id="share-url">{{ share_url }}</pre>
 
-    <button onclick="copyShare()">Copy</button>
-  </div>
+      <button onclick="copyShare()">Copy</button>
+    </div>
 
-  <script>
-    function copyShare() {
-      const text = document.getElementById("share-text").innerText +
-                   "\n" +
-                   document.getElementById("share-url").innerText;
-      navigator.clipboard.writeText(text);
-      alert("Copied!");
-    }
-  </script>
-{% endif %}
+    <script>
+      function copyShare() {
+        const text = document.getElementById("share-text").innerText +
+                    "\n" +
+                    document.getElementById("share-url").innerText;
+        navigator.clipboard.writeText(text);
+        alert("Copied!");
+      }
+    </script>
+  {% endif %}
 
+  <h2>Your DevWrapped years</h2>
+  <ul>
+    <li><a href="/2024/">2024</a></li>
+    <li><a href="/2023/">2023</a></li>
+  </ul>
 
 </body>
 </html>
