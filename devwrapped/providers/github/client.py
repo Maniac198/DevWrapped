@@ -84,3 +84,6 @@ class GitHubClient:
             # Other errors: treat as inactive but do not crash
             return False
 
+    def get_authenticated_user(self) -> str:
+        data = self.get("/user")
+        return data["login"]

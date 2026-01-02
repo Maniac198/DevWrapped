@@ -70,6 +70,14 @@
     {{ provider }} · Generated {{ generated_at }}
   </div>
 
+  {% if archetype %}
+    <div class="card">
+      <h2>{{ archetype.emoji }} {{ archetype.name }}</h2>
+      <p>{{ archetype.description }}</p>
+    </div>
+    <br>
+  {% endif %}
+
   <div class="cards">
     <div class="card">
       <h2>{{ metrics.total_commits }}</h2>
@@ -123,6 +131,31 @@
       </div>
     {% endfor %}
   </div>
+
+  {% if share_text and share_url %}
+  <div class="card">
+    <h2>🔗 Share your DevWrapped</h2>
+
+    <p><strong>Message</strong></p>
+    <pre id="share-text">{{ share_text }}</pre>
+
+    <p><strong>Link</strong></p>
+    <pre id="share-url">{{ share_url }}</pre>
+
+    <button onclick="copyShare()">Copy</button>
+  </div>
+
+  <script>
+    function copyShare() {
+      const text = document.getElementById("share-text").innerText +
+                   "\n" +
+                   document.getElementById("share-url").innerText;
+      navigator.clipboard.writeText(text);
+      alert("Copied!");
+    }
+  </script>
+{% endif %}
+
 
 </body>
 </html>

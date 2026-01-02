@@ -2,79 +2,1092 @@
   "version": "0.1.0",
   "year": 2024,
   "provider": "github",
-  "generated_at": "2025-12-29T11:32:27.049861+00:00",
+  "generated_at": "2025-12-29T19:01:13.330827+00:00",
   "metrics": {
-    "total_commits": 12,
-    "active_days": 2,
-    "busiest_day": "2024-10-01",
-    "most_active_hour": 17,
+    "total_commits": 109,
+    "active_days": 43,
+    "busiest_day": "2024-02-22",
+    "most_active_hour": 10,
     "commits_per_month": {
-      "09": 6,
-      "10": 6
+      "02": 39,
+      "03": 8,
+      "04": 23,
+      "05": 3,
+      "08": 7,
+      "09": 19,
+      "10": 6,
+      "11": 3,
+      "12": 1
     },
     "top_repos": {
-      "Maniac198/ZipCrypt": 12
+      "Maniac198/Competitve-Programming": 42,
+      "Maniac198/SubmissionTicket": 28,
+      "Maniac198/Library-Management-System": 9,
+      "Maniac198/ZipCrypt": 6,
+      "Maniac198/SwiftServe": 5
     }
+  },
+  "stories": [
+    {
+      "id": "commit_volume",
+      "title": "Your Coding Year",
+      "text": "You made 109 commits this year.",
+      "emoji": "\ud83d\udd25"
+    },
+    {
+      "id": "time_of_day",
+      "title": "Your Coding Rhythm",
+      "text": "You coded most often in the mornings.",
+      "emoji": "\u2600\ufe0f"
+    },
+    {
+      "id": "peak_month",
+      "title": "Your Peak Month",
+      "text": "02 was your most active month with 39 commits.",
+      "emoji": "\ud83d\ude80"
+    },
+    {
+      "id": "repo_focus",
+      "title": "Your Main Project",
+      "text": "You focused most on Maniac198/Competitve-Programming, with 42 commits.",
+      "emoji": "\ud83e\udde0"
+    }
+  ],
+  "archetype": {
+    "id": "explorer",
+    "name": "Explorer",
+    "emoji": "\u26a1",
+    "description": "You worked across many different projects."
   },
   "events": [
     {
       "type": "commit",
       "actor": "Maniac",
-      "repo": "Maniac198/ZipCrypt",
-      "timestamp": "2024-10-01T17:41:42+00:00",
+      "repo": "Maniac198/CCL",
+      "timestamp": "2024-05-01T10:38:50+00:00",
       "metadata": {
-        "sha": "27d951aa21b82b7135317d11041c4ccab6bb81ff",
-        "message": "Merge pull request #1 from Maniac198/feature/download"
-      }
-    },
-    {
-      "type": "commit",
-      "actor": "Maniac198",
-      "repo": "Maniac198/ZipCrypt",
-      "timestamp": "2024-10-01T17:39:16+00:00",
-      "metadata": {
-        "sha": "1dddc8333b52be9a39c1d6f4b9054c64fef8825d",
-        "message": "download buttons added"
-      }
-    },
-    {
-      "type": "commit",
-      "actor": "Maniac198",
-      "repo": "Maniac198/ZipCrypt",
-      "timestamp": "2024-10-01T17:25:57+00:00",
-      "metadata": {
-        "sha": "06b8901eddfcb29847a0ef0e929829c38805b6bc",
-        "message": "Download as a file feature backend"
+        "sha": "0bd1f56d6728bbe003bb5ea0a84168da3d587c8b",
+        "message": "Name Changed"
       }
     },
     {
       "type": "commit",
       "actor": "Maniac",
-      "repo": "Maniac198/ZipCrypt",
-      "timestamp": "2024-09-29T13:27:30+00:00",
+      "repo": "Maniac198/CCL",
+      "timestamp": "2024-05-01T10:31:36+00:00",
       "metadata": {
-        "sha": "b56e98764646c615a9beccb0c164495c11b27669",
+        "sha": "12ebeedafa0bf713b286f8fa44c878c3f92bc40d",
+        "message": "Initialize project using Create React App"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-08-16T06:23:36+00:00",
+      "metadata": {
+        "sha": "5c6cd8f4f512f799148f37881f05566770cb7652",
+        "message": "Codeforces Educational Round 169"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-08-15T14:16:55+00:00",
+      "metadata": {
+        "sha": "1866ae87f65c8d31abf6e58416d866ae0d00e3f9",
+        "message": "Codeforces Round 966"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-08-12T19:03:05+00:00",
+      "metadata": {
+        "sha": "0a5dfa3d1bda494b59023730587132c9e42b19e7",
+        "message": "new gitignore"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-08-12T12:28:57+00:00",
+      "metadata": {
+        "sha": "2faabd8ac32a71988fc98a02e0d04b31ba684eab",
+        "message": "mac testing"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-05-08T12:36:42+00:00",
+      "metadata": {
+        "sha": "5a924bfba43a2a236450705a09095eb3f2a638a7",
+        "message": "Codeforces Practise"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-29T11:22:34+00:00",
+      "metadata": {
+        "sha": "bcd0e56be44a17ee96d9a2f68793416c5dc430f9",
+        "message": "Codeforces Round 883 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-29T08:50:28+00:00",
+      "metadata": {
+        "sha": "4b6d92d176c9504d625b640ca99f4fb762e6c3e5",
+        "message": "Codeforces Round 888 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-26T06:41:51+00:00",
+      "metadata": {
+        "sha": "dcfe6a6166a0998038ae61a2471b3896b3025369",
+        "message": "Codeforces Round 496 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-25T18:50:13+00:00",
+      "metadata": {
+        "sha": "8544ac2b4c032af6b946d2e289af649d82fccd7b",
+        "message": "Codeforces Round 895 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-23T17:08:38+00:00",
+      "metadata": {
+        "sha": "7a6bf4b636b5fd39e507bc40c5bd65d642efb217",
+        "message": "Codeforces Round 938 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-21T09:36:32+00:00",
+      "metadata": {
+        "sha": "bc61bb813ac12f43576ee67b26b42b97343665c7",
+        "message": "Codeforces Round 494 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-20T12:57:47+00:00",
+      "metadata": {
+        "sha": "43da6e4ca4732dbbc845d68b9601dfc6f05c4fdf",
+        "message": "Codeforces Round 490 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-20T09:56:56+00:00",
+      "metadata": {
+        "sha": "93ecc2ad93f1ddfeb58a6f54f5623016fa908f3a",
+        "message": "Codeforces Round 486 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-20T07:27:19+00:00",
+      "metadata": {
+        "sha": "abaa89545e82f83468d52ad0758bb4d9baba0fcc",
+        "message": "Codeforces Round 481 Div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-17T16:36:01+00:00",
+      "metadata": {
+        "sha": "5471d2a780ec6585742a163018d258c597097ba4",
+        "message": "Codechef Round 130"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-17T08:49:22+00:00",
+      "metadata": {
+        "sha": "cf7301d6cd451ee29e8f20ed4ac933068856c74a",
+        "message": "Codeforces Round 849 Div 4"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-15T14:06:16+00:00",
+      "metadata": {
+        "sha": "27610aa8c597151569739e7745f5f27bd85009ad",
+        "message": "Codeforces Round 640 Div 4"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-14T14:28:39+00:00",
+      "metadata": {
+        "sha": "1675879e64d12a0852b4a37174af259d7d5fdfa9",
+        "message": "Better Solution"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-14T08:46:00+00:00",
+      "metadata": {
+        "sha": "2400f6fa5f21b53c89bf333c10191e1a1bb4f9b4",
+        "message": "CSES DP"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-13T19:18:40+00:00",
+      "metadata": {
+        "sha": "5874d1ff65b87fd56b8b91102c11d47eababa369",
+        "message": "Codeforces Round 939 Div 2"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-12T19:21:42+00:00",
+      "metadata": {
+        "sha": "79ff7eda26d1ee13a332072c9bb04e9567ff8424",
+        "message": "Codeforces Round 784 Div 4"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-11T18:42:25+00:00",
+      "metadata": {
+        "sha": "64594b48d202afe0edd232b7e80152ea02666b2e",
+        "message": "IIIT Allahbad Constest"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-11T13:48:58+00:00",
+      "metadata": {
+        "sha": "7223bb80d342f29597c837076de78661e0225a24",
+        "message": "Codeforces Round 804 Div 4"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-11T07:02:49+00:00",
+      "metadata": {
+        "sha": "68a81d96cc1d85837c288a91428c4e36d034762a",
+        "message": "codechef round 129 div 3"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-07T09:12:04+00:00",
+      "metadata": {
+        "sha": "dad4e176e3bba2ddba2a56b7e6053c31b726faf7",
+        "message": "Global Round 25"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-04-05T15:42:30+00:00",
+      "metadata": {
+        "sha": "67363316c809edf11794f825107d2353ff6e05c1",
+        "message": "Binary Search Practise"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-03-30T09:41:35+00:00",
+      "metadata": {
+        "sha": "21dbfd30409966e65104dfbf24628425bc1be07d",
+        "message": "Binary Search Practise"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-03-29T11:25:00+00:00",
+      "metadata": {
+        "sha": "d6840ef8506a77f0fa2124c0b3cc77fa0ebbad14",
+        "message": "Upsolving Contest 937"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-03-28T17:39:32+00:00",
+      "metadata": {
+        "sha": "ae382f8f64d66345b469ddc7cb79e4da554ed61f",
+        "message": "Codeforces Round 937"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-03-28T13:50:22+00:00",
+      "metadata": {
+        "sha": "557210e50d249de604e2c5dbfb06f767140321e4",
+        "message": "Binary Search"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-03-27T13:20:24+00:00",
+      "metadata": {
+        "sha": "2ec5ef3ffffd2fe60caee5f7d1291e51f19d0aad",
+        "message": "Codeforces Round 935"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-27T17:44:37+00:00",
+      "metadata": {
+        "sha": "b31974fb44593bbc51b2a2d95777d3743f03627e",
+        "message": "codeforces round 929"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-27T10:20:04+00:00",
+      "metadata": {
+        "sha": "baf04f18e26ce0312a0b28f11668efeee936ac9f",
+        "message": "workspace"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-27T10:18:35+00:00",
+      "metadata": {
+        "sha": "d047db015c19e42d6aa7174e553c1c487ad10ab5",
+        "message": "codeforces round 913"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-21T19:20:32+00:00",
+      "metadata": {
+        "sha": "7e846ed59b789656bd526662326e8904abb2b6b3",
+        "message": "Upsolving"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-21T19:19:35+00:00",
+      "metadata": {
+        "sha": "1b111b8c25e1c5f7d6d294ecaf84dcddb74defc5",
+        "message": "Added new gitignore rule"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-19T18:21:45+00:00",
+      "metadata": {
+        "sha": "80e4a9c8c0f25febb5351f15c93fc37c80a1f32c",
+        "message": "Codeforces round 928"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-19T10:51:02+00:00",
+      "metadata": {
+        "sha": "6db7198655cb06919c962e772cc8bee7d926dc01",
+        "message": "Create README.md"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-19T10:48:43+00:00",
+      "metadata": {
+        "sha": "b31e95ea4c15ed937f54c226cc6934979859f636",
+        "message": "codeforces round 923"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-19T10:47:45+00:00",
+      "metadata": {
+        "sha": "c0ea468489f61a83708c6a6dec51f47f359ed3ac",
+        "message": "Add .gitignore file"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-17T10:12:57+00:00",
+      "metadata": {
+        "sha": "714b5d2e98d60e45da1c40f15317938241bb8c3b",
+        "message": "codeforces round 923"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Competitve-Programming",
+      "timestamp": "2024-02-16T17:28:31+00:00",
+      "metadata": {
+        "sha": "feb946c964647bc059f91df7693f6e1283e46aae",
+        "message": "without bin files"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Deep-Learning-BEIT",
+      "timestamp": "2024-11-08T05:25:30+00:00",
+      "metadata": {
+        "sha": "e0b05859908d5547f9c80ab82634cc334e8a9722",
+        "message": "Add files via upload"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Deep-Learning-BEIT",
+      "timestamp": "2024-11-07T04:05:40+00:00",
+      "metadata": {
+        "sha": "2db07d13f471966cc4cb26bcc1a94352cae36805",
+        "message": "Deep Learning Final Practicals"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Prathamesh Dikondawar",
+      "repo": "Maniac198/EduSync",
+      "timestamp": "2024-10-27T07:57:49+00:00",
+      "metadata": {
+        "sha": "a8cf8fa3e300c0d3d03abe9edaa2fac10708aca6",
         "message": "Create README.md"
       }
     },
     {
       "type": "commit",
       "actor": "Maniac198",
-      "repo": "Maniac198/ZipCrypt",
-      "timestamp": "2024-09-29T13:22:26+00:00",
+      "repo": "Maniac198/EduSync",
+      "timestamp": "2024-08-25T16:57:40+00:00",
       "metadata": {
-        "sha": "472ef2226f88864b68cc3c3f1dd69c958bebaed0",
-        "message": "Frontend in React using vite"
+        "sha": "53d2f604bd4fffd1a0cec1b5145a4a370547bd96",
+        "message": "vercel file added"
       }
     },
     {
       "type": "commit",
       "actor": "Maniac198",
-      "repo": "Maniac198/ZipCrypt",
-      "timestamp": "2024-09-29T13:20:32+00:00",
+      "repo": "Maniac198/EquationVisualizer",
+      "timestamp": "2024-11-25T13:25:06+00:00",
       "metadata": {
-        "sha": "6557f7e6e8a7bf0a3f5ca5be26fa810c4649f82d",
-        "message": "Backend with huffman and AES"
+        "sha": "9e9f82075cc50fc9aa6f211998061053efe7df35",
+        "message": "First Commit"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T17:00:21+00:00",
+      "metadata": {
+        "sha": "058cffb77d00699821a69abf6196af3aad0a38b5",
+        "message": "Merge pull request #1 from Maniac198/feature/library-functionality"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T16:56:23+00:00",
+      "metadata": {
+        "sha": "6728d2b8411ff5f5dad482fb935331202cba0398",
+        "message": "readme.md added"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T16:40:06+00:00",
+      "metadata": {
+        "sha": "422840ec85d524ee85a749fffe2098293ab028a8",
+        "message": "test report added and APi test updated"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T15:57:10+00:00",
+      "metadata": {
+        "sha": "8d9f0d7a1aeb944ae7cae48dcd13741132ae0577",
+        "message": "contanierized the application"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T15:34:55+00:00",
+      "metadata": {
+        "sha": "b48efa7e3c3d6bcd8b60df7f3ce1cf633e13de68",
+        "message": "API routes and test created for APIs"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T13:05:46+00:00",
+      "metadata": {
+        "sha": "f8f5a282bd081ca84e64b3e373227c3e2f90a0ff",
+        "message": "modified the test file"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T12:44:39+00:00",
+      "metadata": {
+        "sha": "98a4869cf12dfb880856996d0bd7de32ab2f8212",
+        "message": "Implement library functionality: add, borrow, return, view books"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T11:49:41+00:00",
+      "metadata": {
+        "sha": "d9596a3d6fbed2e1f60381c9155d44ca21098c0c",
+        "message": "Remove node_modules from the repository"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Library-Management-System",
+      "timestamp": "2024-09-26T11:43:36+00:00",
+      "metadata": {
+        "sha": "8baa4e9d2a3839025dc76cb97539ae5667b24a6c",
+        "message": "initalized a typescript project"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/Mastercard",
+      "timestamp": "2024-12-16T14:45:38+00:00",
+      "metadata": {
+        "sha": "2046ff8b1faae93b519ac154c063a60129fedef7",
+        "message": "Create README.md"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Nice-CoDay-Hackathon",
+      "timestamp": "2024-10-06T16:16:54+00:00",
+      "metadata": {
+        "sha": "c78966f0462f0755b2d3d2ed2a3c0ebe35fdd9b7",
+        "message": "Problem Statement"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/Nice-CoDay-Hackathon",
+      "timestamp": "2024-10-06T16:13:51+00:00",
+      "metadata": {
+        "sha": "0f7edd5e293bbfa26b8da90db327888db174dd8e",
+        "message": "3 Testcases working"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/ReactFrontend",
+      "timestamp": "2024-09-06T16:04:37+00:00",
+      "metadata": {
+        "sha": "91ff41e5c9510af540392760d94036a21f190e93",
+        "message": "Vanilla React"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-27T12:28:05+00:00",
+      "metadata": {
+        "sha": "0045e42416bffe97645a233768e6089198db90fc",
+        "message": "sample"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-27T10:02:18+00:00",
+      "metadata": {
+        "sha": "f4d3ed828be3e49a7e9431e6bf8785e7a2bb73dc",
+        "message": "comments"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-25T12:50:12+00:00",
+      "metadata": {
+        "sha": "4fae06cbca28590edb4fdb03cdfa5b27e31925b0",
+        "message": "Tailwind Update"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-23T18:15:15+00:00",
+      "metadata": {
+        "sha": "89445302718865c69436e09bb2be2509c9843d02",
+        "message": "trial"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-23T14:16:12+00:00",
+      "metadata": {
+        "sha": "fe37eb03c3f8acad6ce48a2741788fe52f1a3efd",
+        "message": "Database added"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-23T14:15:13+00:00",
+      "metadata": {
+        "sha": "a37443a8ae57bf081cf66d3ce78d56276b493d02",
+        "message": "Student Login fixed"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T20:49:41+00:00",
+      "metadata": {
+        "sha": "0efb6d30bf7305e368a12be4cdbb40b66f857b79",
+        "message": "Dummy Data"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T20:39:56+00:00",
+      "metadata": {
+        "sha": "4f14b3b6859762153f6e84e8ea9dba2c90a7edfb",
+        "message": "Merge branch 'main' of https://github.com/Maniac198/SubmissionTicket"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T20:38:58+00:00",
+      "metadata": {
+        "sha": "cabf2edd4dd5221922f4a606c02ec8d5cead9f61",
+        "message": "new"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T20:33:28+00:00",
+      "metadata": {
+        "sha": "829c02765d363d75855d222c4801b754150ff8ed",
+        "message": "Teacher Login with backend connected"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T16:51:31+00:00",
+      "metadata": {
+        "sha": "bfee39878482e0ca7dcc8b5d72f17a5c8389b745",
+        "message": "Teacher Dashboard update"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T12:09:56+00:00",
+      "metadata": {
+        "sha": "61f53eb2329ca2211673e80e8ada0fe092e3b874",
+        "message": "new dependencies"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T12:09:32+00:00",
+      "metadata": {
+        "sha": "703bbbc54ab741221857274402229a8b8440f915",
+        "message": "icons added"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T11:56:18+00:00",
+      "metadata": {
+        "sha": "7140df50c7e86088ea6bb66bb8934cc575c8790b",
+        "message": "new routes"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T11:50:19+00:00",
+      "metadata": {
+        "sha": "375f2914e4c52ffac77cf9b504cb28c1f6d50867",
+        "message": "Merge branch 'main' of https://github.com/Maniac198/SubmissionTicket"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T11:46:28+00:00",
+      "metadata": {
+        "sha": "3fe86a714cce704dddc26e26c2314904a5db2d11",
+        "message": "connected backend, connected db"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-22T11:41:59+00:00",
+      "metadata": {
+        "sha": "fdf07878e30dd55a0e09dcedc732f64287f7aa4e",
+        "message": "New Changes 22 Feb"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-19T10:55:06+00:00",
+      "metadata": {
+        "sha": "dec0fa28388501c8d7c0efae216b219ed861b789",
+        "message": "Merge branch 'main' of https://github.com/Maniac198/SubmissionTicket"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-19T10:54:21+00:00",
+      "metadata": {
+        "sha": "426d768d7b732f9708fe71d7757270fc56f5fc5c",
+        "message": "Landing.css created, Landing component inside app.jsx"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-19T10:52:27+00:00",
+      "metadata": {
+        "sha": "75ebb9137192f722e0b304929fb6a2937ac40036",
+        "message": "Updated landing student and teacher dashboard"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-19T10:46:29+00:00",
+      "metadata": {
+        "sha": "d0090414eda8ed91c1fe8434f5db0a6bd7253970",
+        "message": "Removed LandingPage component"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-19T10:35:58+00:00",
+      "metadata": {
+        "sha": "4cea391093a1854c2dcee3aac5a4bacc7b827822",
+        "message": "landing page updated"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-17T20:02:42+00:00",
+      "metadata": {
+        "sha": "669999b5bae7deea5814d73ec610aaa52b591c8e",
+        "message": "Merge branch 'main' of https://github.com/Maniac198/SubmissionTicket"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-17T20:02:20+00:00",
+      "metadata": {
+        "sha": "4761f0b3dc27b7f31fe50f9e397fb3542e3ac7eb",
+        "message": "react-router with logout"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "atharvpathak84",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-17T18:38:49+00:00",
+      "metadata": {
+        "sha": "9a31ea5af1343bbe9f15b6899869ae2a2dbd20a3",
+        "message": "Changessssssssssssss"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-17T16:10:32+00:00",
+      "metadata": {
+        "sha": "61fc1f506d6502c6c3d0dd295f27fa280f4a4fc3",
+        "message": "passport incomplete integration with mysql"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-17T11:29:29+00:00",
+      "metadata": {
+        "sha": "c06578a07ca2cd732191f46ed1280308eeaaeb20",
+        "message": "backend added"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SubmissionTicket",
+      "timestamp": "2024-02-17T11:28:30+00:00",
+      "metadata": {
+        "sha": "3dfe1bd779dcdaf2f9666666065f818737497880",
+        "message": "Repo Created"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/SwiftServe",
+      "timestamp": "2024-09-29T12:20:40+00:00",
+      "metadata": {
+        "sha": "90d89adfb4c912b388478756d48892e8bfa23ec2",
+        "message": "Create README.md"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/SwiftServe",
+      "timestamp": "2024-09-29T12:12:47+00:00",
+      "metadata": {
+        "sha": "7f5ca82a3464021de50aca7c42d539e2943374f7",
+        "message": "Frontend for url upload"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/SwiftServe",
+      "timestamp": "2024-09-29T11:58:45+00:00",
+      "metadata": {
+        "sha": "123a9ab90844775ecb868b605876ca41d0804a2c",
+        "message": "Reverse proxy for s3 buckets"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/SwiftServe",
+      "timestamp": "2024-09-29T11:56:18+00:00",
+      "metadata": {
+        "sha": "5b40abd47ad2041563a1a4c1b35806c88cf51ec3",
+        "message": "Build Server created"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/SwiftServe",
+      "timestamp": "2024-09-29T11:48:09+00:00",
+      "metadata": {
+        "sha": "41f823a190c280035809b63e6fbb9902bac01d7b",
+        "message": "API server created"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/TodoApp",
+      "timestamp": "2024-03-04T18:42:55+00:00",
+      "metadata": {
+        "sha": "61625fd04b7f423fb4170b79956931c52b5081d0",
+        "message": "Merge remote-tracking branch 'origin/master'"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/TodoApp",
+      "timestamp": "2024-03-04T18:35:19+00:00",
+      "metadata": {
+        "sha": "9781a26e18cb5c0b5470d1b3c2a3d8d4abb0c086",
+        "message": "First Commit"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/TodoApp",
+      "timestamp": "2024-03-04T18:34:24+00:00",
+      "metadata": {
+        "sha": "37fac98987e53200709aa39fa83ab89f72ae1ad5",
+        "message": "Initial commit"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac",
+      "repo": "Maniac198/VercelTest",
+      "timestamp": "2024-09-06T16:02:11+00:00",
+      "metadata": {
+        "sha": "29e2a729cc9d978841c7d9f8f5352cab55505b05",
+        "message": "Create README.md"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/VercelTest",
+      "timestamp": "2024-08-25T16:33:43+00:00",
+      "metadata": {
+        "sha": "be9f4ce1bb53d291e098456251c99840a49e98ec",
+        "message": "Node Engine version changed"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/VercelTest",
+      "timestamp": "2024-08-25T16:22:37+00:00",
+      "metadata": {
+        "sha": "64af52f0d5aac0f528bb5b67dec10188610f3167",
+        "message": "Vercel Deployment"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Samir-Thokal",
+      "repo": "Maniac198/WADL-Assignments",
+      "timestamp": "2024-04-23T08:43:46+00:00",
+      "metadata": {
+        "sha": "55bd72ea1b1ef20c2712a3761dea27dacf26f51e",
+        "message": "Update index.html"
+      }
+    },
+    {
+      "type": "commit",
+      "actor": "Maniac198",
+      "repo": "Maniac198/WADL-Assignments",
+      "timestamp": "2024-04-23T06:44:23+00:00",
+      "metadata": {
+        "sha": "c97af56689da68a69d69d29fc261528d60df0614",
+        "message": "Add files via upload"
       }
     },
     {

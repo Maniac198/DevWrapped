@@ -21,6 +21,9 @@ class HTMLRenderer:
         *,
         metrics: dict,
         stories: list | None = None,
+        archetype=dict | None,
+        share_text=None,
+        share_url=None,
         year: int,
         provider: str,
     ) -> None:
@@ -31,6 +34,9 @@ class HTMLRenderer:
             provider=provider,
             metrics=metrics,
             stories=stories,
+            archetype=archetype,
+            share_text=share_text,
+            share_url=share_url,
             generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         )
 

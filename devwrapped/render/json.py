@@ -16,6 +16,7 @@ class JSONRenderer:
         events: List[Event],
         metrics: dict | None = None,
         stories: list | None = None,
+        archetype=None,
         year: int,
         provider: str,
         version: str = "0.1.0",
@@ -27,6 +28,7 @@ class JSONRenderer:
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "metrics": metrics or {},
             "stories": stories or [],
+             "archetype": archetype,
             "events": [self._serialize_event(e) for e in events],
         }
 

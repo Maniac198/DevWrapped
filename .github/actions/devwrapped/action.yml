@@ -1,6 +1,5 @@
 name: "DevWrapped"
 description: "Generate Spotify Wrapped-style year-end developer stats"
-
 inputs:
   year:
     description: "Year to generate Wrapped for"
@@ -33,6 +32,7 @@ runs:
     - name: Generate DevWrapped
       env:
         GITHUB_TOKEN: ${{ github.token }}
+        DEVWRAPPED_SHARE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
       run: |
         if [ "${{ inputs.output }}" = "json" ]; then
           devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.json
