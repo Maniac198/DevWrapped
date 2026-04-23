@@ -152,45 +152,108 @@ devwrapped cache-clear   # wipe all cached API responses
 | 4    | Rate limited (retries exhausted) |
 | 10   | Internal error |
 
-## GitHub Action
+## GitHub Action + Pages deploy
 
-Use the reusable composite action shipped in `.github/actions/devwrapped`:
+DevWrapped ships a composite Action under `.github/actions/devwrapped` plus a
+ready-made workflow at `.github/workflows/devwrapped.yml` that:
+
+1. **Builds** the report and stages it under `./public/<year>/`.
+2. **Uploads** `./public` as a GitHub Pages artifact (`actions/upload-pages-artifact`).
+3. **Deploys** it with the first-party `actions/deploy-pages@v4` to the
+   `github-pages` environment.
+
+### One-time Pages setup (required)
+
+GitHub Pages has to know we're driving it from Actions — *without this step
+the workflow will succeed but nothing will appear at your URL*:
+
+1. Go to **Settings → Pages** on your repo.
+2. Under **Build and deployment → Source**, choose **"GitHub Actions"**.
+3. (Recommended) Under **Settings → Environments** confirm an environment
+   named `github-pages` exists — GitHub creates it automatically the first
+   time `actions/deploy-pages` runs, but you can pre-create it and add
+   protection rules if you like.
+
+### Required permissions & environment
+
+The workflow already declares them; if you fork the repo, leave them as-is:
 
 ```yaml
-# .github/workflows/devwrapped.yml
+jobs:
+  build:
+    permissions:
+      contents: read           # checkout
+  deploy:
+    permissions:
+      pages: write             # publish to Pages
+      id-token: write          # OIDC for deploy-pages
+    environment:
+      name: github-pages       # required by deploy-pages
+```
+
+### Triggering a run
+
+- Manually: **Actions → DevWrapped → Run workflow** (with optional year/owner inputs).
+- Automatically: the workflow is scheduled for `00:15 UTC on January 1st` each year.
+
+### What ends up on Pages
+
+After a successful run, the site at
+`https://<owner>.github.io/<repo>/` contains:
+
+- `index.html` — a landing page auto-generated from every year folder.
+- `<year>/index.html` — the slide deck + summary for that year.
+- `<year>/wrapped.json` — the full payload for programmatic use.
+- `<year>/og.png` — the Open Graph share card.
+- `.nojekyll` — opt-out so Pages doesn't try to process the site with Jekyll.
+
+Workflow artifacts (`wrapped.json`, `wrapped.html`, `wrapped-og.png`) are
+also attached to each run for manual download.
+
+### Using the Action from another repo
+
+```yaml
+# .github/workflows/devwrapped.yml in your repo
 name: DevWrapped
 on:
   workflow_dispatch:
-    inputs:
-      year:
-        description: "Year (defaults to last year)"
-        required: false
-        default: ""
   schedule:
-    - cron: "0 0 1 1 *"   # Jan 1 every year
+    - cron: "15 0 1 1 *"
 
-permissions:
-  contents: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  wrapped:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: <your-org>/devwrapped/.github/actions/devwrapped@main
+      - uses: Maniac198/devwrapped/.github/actions/devwrapped@main
         with:
-          year: ${{ github.event.inputs.year }}
           owner: ${{ github.repository_owner }}
-          output: both            # json | html | both
-          publish-pages: "true"   # publish HTML + rebuilt index to GH Pages
+          output: both
+          prepare-pages: "true"
+          upload-pages-artifact: "true"
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: d
 ```
 
-Every run publishes:
-
-- `public/<year>/index.html` — the slide deck + summary for that year.
-- `public/<year>/wrapped.json` — the full payload for programmatic use.
-- `public/<year>/og.png` — the Open Graph share card (needs `[share]` extras).
-- `public/index.html` — a landing page auto-generated from every year folder.
-- `wrapped.json` and `wrapped.html` as workflow artifacts.
+When the Action runs from a repo that *isn't* the DevWrapped source, it
+installs the package via
+`pip install "devwrapped[share] @ git+https://github.com/Maniac198/devwrapped.git@main"`
+so there's nothing to vendor on your side.
 
 ## Environment variables
 

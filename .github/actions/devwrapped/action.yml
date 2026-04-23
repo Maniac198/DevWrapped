@@ -1,5 +1,6 @@
 name: "DevWrapped"
-description: "Generate Spotify Wrapped-style year-end developer stats"
+description: "Generate Spotify-Wrapped-style year-end developer stats and stage them for GitHub Pages"
+
 inputs:
   year:
     description: "Year to generate Wrapped for (defaults to last year)."
@@ -17,10 +18,33 @@ inputs:
     description: "Output format: json, html, or both."
     required: false
     default: "both"
-  publish-pages:
-    description: "Set to 'true' to publish the HTML output to GitHub Pages."
+  prepare-pages:
+    description: "Set to 'true' to stage output under ./public/<year> and rebuild the multi-year index."
     required: false
     default: "true"
+  upload-pages-artifact:
+    description: "Set to 'true' to upload ./public as a Pages artifact (for use with actions/deploy-pages)."
+    required: false
+    default: "true"
+  devwrapped-ref:
+    description: "Git ref to install DevWrapped from when the caller repo isn't the DevWrapped source. Used as fallback only."
+    required: false
+    default: "main"
+  github-token:
+    description: "Token used to call the GitHub API. Defaults to github.token."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  year:
+    description: "The year the report was generated for."
+    value: ${{ steps.params.outputs.year }}
+  owner:
+    description: "The GitHub handle the report was generated for."
+    value: ${{ steps.params.outputs.owner }}
+  public-dir:
+    description: "Directory containing the staged Pages content (only set when prepare-pages='true')."
+    value: ./public
 
 runs:
   using: "composite"
@@ -36,7 +60,22 @@ runs:
 
     - name: Install DevWrapped
       shell: bash
-      run: pip install '.[share]'
+      run: |
+        set -euo pipefail
+        # Prefer installing from a local pyproject (when the caller is the
+        # DevWrapped source repo); otherwise install from the requested git
+        # ref so this Action is usable from any caller repository.
+        if [ -f pyproject.toml ] && grep -q 'name *= *"devwrapped"' pyproject.toml; then
+          echo "Installing DevWrapped from local source (.[share])"
+          python -m pip install --upgrade pip
+          pip install '.[share]'
+        else
+          REF="${{ inputs.devwrapped-ref }}"
+          echo "Installing DevWrapped from git ref: $REF"
+          python -m pip install --upgrade pip
+          pip install "devwrapped[share] @ git+https://github.com/Maniac198/devwrapped.git@$REF"
+        fi
+        devwrapped version
 
     - name: Resolve parameters
       id: params
@@ -57,7 +96,7 @@ runs:
     - name: Generate DevWrapped
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
         DEVWRAPPED_SHARE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ steps.params.outputs.year }}/"
         DEVWRAPPED_LOG_JSON: "1"
       run: |
@@ -77,13 +116,14 @@ runs:
             devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.html
             ;;
           both|*)
-            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.json
+            # HTML first so the JSON can carry the same heatmap payload.
             devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.html
+            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.json
             ;;
         esac
 
     - name: Prepare GitHub Pages content
-      if: ${{ inputs.publish-pages == 'true' }}
+      if: ${{ inputs.prepare-pages == 'true' }}
       shell: bash
       run: |
         set -euo pipefail
@@ -100,19 +140,25 @@ runs:
         fi
         devwrapped build-index --public-dir public
 
-    - name: Deploy to GitHub Pages
-      if: ${{ inputs.publish-pages == 'true' }}
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ github.token }}
-        publish_dir: ./public
-        keep_files: true
+        # Jekyll would otherwise skip files/dirs that start with an underscore
+        # or a dot; opt out explicitly.
+        touch public/.nojekyll
 
-    - name: Upload Wrapped artifacts
+        echo "--- public/ contents ---"
+        find public -maxdepth 3 -type f | sort
+
+    - name: Upload GitHub Pages artifact
+      if: ${{ inputs.prepare-pages == 'true' && inputs.upload-pages-artifact == 'true' }}
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./public
+
+    - name: Upload Wrapped workflow artifacts
       uses: actions/upload-artifact@v4
       with:
         name: devwrapped-${{ steps.params.outputs.year }}
         path: |
           wrapped.json
           wrapped.html
+          wrapped-og.png
         if-no-files-found: ignore

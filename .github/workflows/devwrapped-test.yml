@@ -2,21 +2,34 @@ name: DevWrapped Test
 
 on:
   workflow_dispatch:
+    inputs:
+      year:
+        description: "Year to test"
+        required: false
+        default: "2024"
+      owner:
+        description: "GitHub handle"
+        required: false
+        default: ""
+
+# Don't pile up concurrent test deploys; only the latest one matters.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  test-devwrapped:
+  build:
+    name: Build (test)
     runs-on: ubuntu-latest
-
     permissions:
-      contents: write
-
+      contents: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run DevWrapped Action
+      - name: Run DevWrapped (no Pages upload)
         uses: ./.github/actions/devwrapped
         with:
-          year: 2024
-          owner: Maniac198
+          year: ${{ github.event.inputs.year }}
+          owner: ${{ github.event.inputs.owner }}
           output: html
+          prepare-pages: "true"
+          # Test runs don't deploy, they just verify the build surface.
+          upload-pages-artifact: "false"

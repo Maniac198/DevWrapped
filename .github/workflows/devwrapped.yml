@@ -7,19 +7,60 @@ on:
         description: "Year (defaults to last year)"
         required: false
         default: ""
+      owner:
+        description: "GitHub handle (defaults to repo owner)"
+        required: false
+        default: ""
+      is-org:
+        description: "Set to 'true' if the owner is an org"
+        required: false
+        default: "false"
   schedule:
-    - cron: "0 0 1 1 *" # Jan 1 every year
+    # First day of every year, 00:15 UTC.
+    - cron: "15 0 1 1 *"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/devwrapped.yml"
 
-permissions:
-  contents: write
+# Don't pile up concurrent Pages deploys; only the latest one matters.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  wrapped:
+  build:
+    name: Build DevWrapped report
     runs-on: ubuntu-latest
+    # Tokens we need:
+    #   contents: read  - to checkout
+    # Everything else (Pages upload/deploy) runs in the deploy job.
+    permissions:
+      contents: read
     steps:
-      - uses: Maniac198/devwrapped/.github/actions/devwrapped@main
+      - name: Run DevWrapped
+        uses: ./.github/actions/devwrapped
         with:
           year: ${{ github.event.inputs.year }}
-          owner: ${{ github.repository_owner }}
+          owner: ${{ github.event.inputs.owner }}
+          is-org: ${{ github.event.inputs.is-org || 'false' }}
           output: both
-          publish-pages: "true"
+          prepare-pages: "true"
+          upload-pages-artifact: "true"
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    # First-party Pages deploy requires these two permissions and the
+    # 'github-pages' environment (auto-created by GitHub).
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
