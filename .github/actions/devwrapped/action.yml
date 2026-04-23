@@ -95,6 +95,7 @@ runs:
         if [ -f wrapped.json ]; then
           cp wrapped.json public/"$YEAR"/wrapped.json
         fi
+        devwrapped build-index --public-dir public
 
     - name: Deploy to GitHub Pages
       if: ${{ inputs.publish-pages == 'true' }}

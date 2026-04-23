@@ -55,6 +55,12 @@ _ARCHETYPE_CATALOG: dict[str, dict] = {
         "description": "Your year was defined by pull requests and teamwork.",
         "palette": {"primary": "#22c55e", "secondary": "#14532d", "accent": "#bbf7d0"},
     },
+    "reviewer": {
+        "name": "Reviewer",
+        "emoji": "🔍",
+        "description": "You spent your year reviewing code as much as writing it.",
+        "palette": {"primary": "#f97316", "secondary": "#7c2d12", "accent": "#fed7aa"},
+    },
     "marathoner": {
         "name": "Marathoner",
         "emoji": "🏃",
@@ -86,8 +92,11 @@ class ArchetypeEngine:
         weekend_ratio = self.metrics.get("weekend_ratio", 0.0)
         longest_streak = self.metrics.get("longest_streak", 0)
         prs = self.metrics.get("total_pull_requests", 0)
+        reviews = self.metrics.get("total_reviews", 0)
 
         # Priority order is intentional — more specific personas first.
+        if reviews >= max(50, total) and reviews > 0:
+            return self._archetype("reviewer")
         if weekend_ratio >= 0.5 and total >= 10:
             return self._archetype("weekend_warrior")
         if hour is not None and (hour >= 22 or hour <= 5) and total >= 10:

@@ -38,6 +38,9 @@ dev = [
   "pytest-mock>=3.14",
   "responses>=0.25",
   "ruff>=0.6",
+  "mypy>=1.11",
+  "types-requests>=2.31",
+  "pre-commit>=3.7",
 ]
 
 [project.scripts]
@@ -80,3 +83,17 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+pretty = true
+show_error_codes = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+# Gentle defaults: don't require type annotations everywhere yet, but lint what
+# we do annotate. Ratchet these up as the codebase matures.
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+files = ["devwrapped"]

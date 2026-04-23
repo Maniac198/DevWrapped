@@ -23,6 +23,7 @@ class StoryEngine:
             self._streak_story,
             self._weekday_story,
             self._pull_request_story,
+            self._review_story,
             self._language_story,
         ]
 
@@ -174,7 +175,27 @@ class StoryEngine:
             }
         ]
 
-    # 8. Languages
+    # 8. Reviews
+    def _review_story(self) -> list[Story]:
+        reviews = self.metrics.get("total_reviews", 0)
+        if reviews == 0:
+            return []
+        approvals = self.metrics.get("approvals_given", 0)
+        repos = self.metrics.get("reviewed_repo_count", 0)
+        approval_rate = int(approvals / reviews * 100) if reviews else 0
+        return [
+            {
+                "id": "reviews",
+                "title": "Reviewing with Care",
+                "text": (
+                    f"You submitted {reviews} reviews across {repos} "
+                    f"repositor{'y' if repos == 1 else 'ies'} ({approval_rate}% approvals)."
+                ),
+                "emoji": "🔍",
+            }
+        ]
+
+    # 9. Languages
     def _language_story(self) -> list[Story]:
         languages = self.metrics.get("languages", {})
         if not languages:

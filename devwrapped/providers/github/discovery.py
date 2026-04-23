@@ -18,6 +18,7 @@ def discover_active_repos(
     is_org: bool = False,
     include_forks: bool = False,
     include_archived: bool = False,
+    include_private: bool = False,
 ) -> list[str]:
     """Return the set of repo names owned by *owner* that had commits in *year*."""
     active_repos: list[str] = []
@@ -26,6 +27,8 @@ def discover_active_repos(
         if not include_archived and repo.get("archived"):
             continue
         if not include_forks and repo.get("fork"):
+            continue
+        if not include_private and repo.get("private"):
             continue
 
         repo_name = repo["name"]

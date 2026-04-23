@@ -28,6 +28,7 @@ class JSONRenderer:
         version: str = "0.2.0",
         include_events: bool = True,
         pseudonymize_actors: bool = False,
+        heatmap_svg: str | None = None,
     ) -> None:
         events_list = list(events)
 
@@ -40,6 +41,8 @@ class JSONRenderer:
             "stories": stories or [],
             "archetype": archetype,
         }
+        if heatmap_svg:
+            payload["heatmap_svg"] = heatmap_svg
 
         if include_events:
             payload["events"] = [

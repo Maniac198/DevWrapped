@@ -20,6 +20,7 @@ class MetricsEngine:
         self.all_events = events
         self.commits = [e for e in events if e.type == EventType.COMMIT]
         self.pull_requests = [e for e in events if e.type == EventType.PULL_REQUEST]
+        self.reviews = [e for e in events if e.type == EventType.REVIEW]
         self.languages = languages or {}
 
     # ---- public API -------------------------------------------------------
@@ -46,6 +47,14 @@ class MetricsEngine:
             "merged_pull_requests": sum(
                 1 for e in self.pull_requests if e.metadata.get("merged")
             ),
+            "total_reviews": len(self.reviews),
+            "approvals_given": sum(
+                1 for e in self.reviews if (e.metadata.get("state") or "").upper() == "APPROVED"
+            ),
+            "changes_requested": sum(
+                1 for e in self.reviews if (e.metadata.get("state") or "").upper() == "CHANGES_REQUESTED"
+            ),
+            "reviewed_repo_count": len({e.repo for e in self.reviews}),
             "languages": self._top_languages(),
             "commits_per_active_day": self._commits_per_active_day(),
         }

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from datetime import datetime, timezone
@@ -13,12 +14,16 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from devwrapped import __version__
 from devwrapped.archetypes.engine import ArchetypeEngine
+from devwrapped.cache import ResponseCache, default_cache_dir
+from devwrapped.exit_codes import ExitCode
 from devwrapped.logging_utils import configure_logging, log_event, new_correlation_id
 from devwrapped.metrics.engine import MetricsEngine
 from devwrapped.providers.github import GitHubProvider
 from devwrapped.providers.github.client import GitHubAPIError, GitHubClient
 from devwrapped.providers.github.discovery import discover_active_repos
+from devwrapped.render.heatmap import render_heatmap
 from devwrapped.render.html import HTMLRenderer
+from devwrapped.render.index import build_index
 from devwrapped.render.json import JSONRenderer
 from devwrapped.stories.engine import StoryEngine
 
@@ -41,9 +46,13 @@ def generate(
     is_org: bool = typer.Option(False, "--org", help="Treat the owner as an organization."),
     include_forks: bool = typer.Option(False, "--include-forks", help="Include forked repos in discovery."),
     include_archived: bool = typer.Option(False, "--include-archived", help="Include archived repos in discovery."),
+    include_private: bool = typer.Option(False, "--private/--no-private", help="Include private repositories visible to the token."),
     include_prs: bool = typer.Option(True, "--prs/--no-prs", help="Include pull request events."),
+    include_reviews: bool = typer.Option(True, "--reviews/--no-reviews", help="Include pull request reviews the user submitted."),
     include_languages: bool = typer.Option(True, "--languages/--no-languages", help="Include per-language byte totals."),
     pseudonymize: bool = typer.Option(False, "--pseudonymize", help="Hash actor names in the JSON output."),
+    cache_enabled: bool = typer.Option(True, "--cache/--no-cache", help="Use on-disk ETag cache under $XDG_CACHE_HOME/devwrapped."),
+    cache_dir: str | None = typer.Option(None, "--cache-dir", help="Override cache directory."),
     log_level: str = typer.Option("INFO", "--log-level", help="Log level (DEBUG, INFO, WARNING, ERROR)."),
     log_json: bool = typer.Option(False, "--log-json", help="Emit structured JSON logs to stderr."),
 ) -> None:
@@ -54,7 +63,7 @@ def generate(
 
     if provider != "github":
         console.print(f"[red]Provider '{provider}' is not supported yet.[/red]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=ExitCode.USAGE_ERROR)
 
     if year is None:
         year = datetime.now(timezone.utc).year - 1
@@ -62,28 +71,29 @@ def generate(
     output_path = Path(output or "wrapped.html")
     if output_path.suffix not in (".html", ".json"):
         console.print("[red]Unsupported output format. Use .json or .html.[/red]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=ExitCode.USAGE_ERROR)
 
     console.print(f"[bold green]DevWrapped[/bold green] v{__version__} · year [bold]{year}[/bold]")
 
-    # --- Authenticate ---------------------------------------------------------
+    cache = ResponseCache(path=cache_dir, enabled=cache_enabled)
+    if cache_enabled:
+        console.print(f"💾 Cache: [dim]{cache.path}[/dim]")
+
     try:
-        client = GitHubClient()
+        client = GitHubClient(cache=cache)
     except RuntimeError as exc:
         console.print(f"[red]{exc}[/red]")
-        raise typer.Exit(code=2) from exc
+        raise typer.Exit(code=ExitCode.AUTH_FAILURE) from exc
 
-    # --- Detect owner ---------------------------------------------------------
     if owner is None:
         with _spinner("Detecting GitHub user…"):
             try:
                 owner = client.get_authenticated_user()
             except GitHubAPIError as exc:
                 console.print(f"[red]Could not detect user: GitHub API {exc.status}[/red]")
-                raise typer.Exit(code=2) from exc
+                raise typer.Exit(code=ExitCode.AUTH_FAILURE) from exc
         console.print(f"👤 Authenticated as [bold]{owner}[/bold]")
 
-    # --- Resolve repo list ----------------------------------------------------
     if repo:
         repos = [r.strip() for r in repo.split(",") if r.strip()]
     else:
@@ -95,15 +105,15 @@ def generate(
                 is_org=is_org,
                 include_forks=include_forks,
                 include_archived=include_archived,
+                include_private=include_private,
             )
 
     if not repos:
         console.print("[yellow]No active repositories found for this year.[/yellow]")
-        raise typer.Exit(0)
+        raise typer.Exit(code=ExitCode.NO_DATA)
 
     console.print(f"📦 Found [bold]{len(repos)}[/bold] active repositor{'y' if len(repos) == 1 else 'ies'}")
 
-    # --- Fetch events ---------------------------------------------------------
     all_events = []
     languages_total: dict[str, int] = {}
 
@@ -137,16 +147,30 @@ def generate(
 
             progress.advance(fetch_task)
 
+    if include_reviews:
+        with _spinner("Fetching reviews you've submitted…"):
+            try:
+                review_provider = GitHubProvider(
+                    owner=owner, repo="_reviews_", client=client, author=owner
+                )
+                all_events.extend(review_provider.fetch_reviews(year))
+            except GitHubAPIError as exc:
+                console.print(f"[yellow]Review fetch failed ({exc.status}); continuing.[/yellow]")
+
     console.print(f"📊 Collected [bold]{len(all_events)}[/bold] events")
 
-    # --- Compute --------------------------------------------------------------
     metrics = MetricsEngine(all_events, languages=languages_total).compute()
     stories = StoryEngine(metrics).generate()
     archetype = ArchetypeEngine(metrics).classify()
+    heatmap_svg = render_heatmap(
+        commits_per_day=metrics.get("commits_per_day"),
+        year=year,
+        primary=archetype["palette"]["primary"],
+        accent=archetype["palette"]["accent"],
+    )
 
     console.print(f"🎭 Archetype: [bold]{archetype['emoji']} {archetype['name']}[/bold]")
 
-    # --- Share metadata -------------------------------------------------------
     share_url = os.getenv("DEVWRAPPED_SHARE_URL")
     share_text = None
     if share_url:
@@ -154,7 +178,6 @@ def generate(
             f"I'm an {archetype['emoji']} {archetype['name']} — here's my DevWrapped {year}"
         )
 
-    # --- Render ---------------------------------------------------------------
     if output_path.suffix == ".json":
         JSONRenderer(output_path).render(
             events=all_events,
@@ -165,6 +188,7 @@ def generate(
             provider=provider,
             version=__version__,
             pseudonymize_actors=pseudonymize,
+            heatmap_svg=heatmap_svg,
         )
     else:
         HTMLRenderer(output_path).render(
@@ -175,6 +199,7 @@ def generate(
             share_url=share_url,
             year=year,
             provider=provider,
+            heatmap_svg=heatmap_svg,
         )
 
     log_event(
@@ -187,6 +212,74 @@ def generate(
         output=str(output_path),
     )
     console.print(f"[bold green]✅ Done[/bold green] — wrote {output_path}")
+
+
+@app.command()
+def render(
+    input_path: str = typer.Argument(..., metavar="INPUT", help="Path to a wrapped.json file to re-render."),
+    output: str = typer.Option("wrapped.html", "--output", help="HTML output path."),
+) -> None:
+    """Re-render an HTML report from a previously generated wrapped.json (offline)."""
+    input_file = Path(input_path)
+    if not input_file.is_file():
+        console.print(f"[red]No such file: {input_file}[/red]")
+        raise typer.Exit(code=ExitCode.USAGE_ERROR)
+
+    try:
+        payload = json.loads(input_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        console.print(f"[red]Invalid JSON in {input_file}: {exc}[/red]")
+        raise typer.Exit(code=ExitCode.USAGE_ERROR) from exc
+
+    year = int(payload.get("year") or 0)
+    metrics = payload.get("metrics") or {}
+    stories = payload.get("stories") or []
+    archetype = payload.get("archetype")
+    provider = payload.get("provider", "github")
+
+    heatmap_svg = payload.get("heatmap_svg") or render_heatmap(
+        commits_per_day=metrics.get("commits_per_day"),
+        year=year,
+        primary=(archetype or {}).get("palette", {}).get("primary", "#22c55e"),
+        accent=(archetype or {}).get("palette", {}).get("accent", "#bbf7d0"),
+    )
+
+    HTMLRenderer(output).render(
+        metrics=metrics,
+        stories=stories,
+        archetype=archetype,
+        share_text=None,
+        share_url=os.getenv("DEVWRAPPED_SHARE_URL"),
+        year=year,
+        provider=provider,
+        heatmap_svg=heatmap_svg,
+    )
+    console.print(f"[bold green]✅ Rendered[/bold green] → {output}")
+
+
+@app.command("build-index")
+def build_index_cmd(
+    public_dir: str = typer.Option("public", "--public-dir", help="Directory containing <year>/ folders."),
+) -> None:
+    """Rebuild a multi-year landing page at <public_dir>/index.html."""
+    output = build_index(public_dir)
+    console.print(f"🏠 Index → {output}")
+
+
+@app.command("cache-clear")
+def cache_clear(
+    cache_dir: str | None = typer.Option(None, "--cache-dir", help="Override cache directory."),
+) -> None:
+    """Delete the on-disk response cache."""
+    cache = ResponseCache(path=cache_dir)
+    removed = cache.purge()
+    console.print(f"🧹 Removed {removed} cached response(s) from {cache.path}")
+
+
+@app.command("cache-path")
+def cache_path() -> None:
+    """Print the default cache directory."""
+    console.print(str(default_cache_dir()))
 
 
 @app.command()
@@ -214,6 +307,7 @@ def _spinner(message: str):
     class _Ctx:
         def __enter__(self_inner):  # noqa: N805
             return self_inner
+
         def __exit__(self_inner, exc_type, exc, tb):  # noqa: N805
             progress.update(task_id, completed=1)
             progress.stop()

@@ -2,40 +2,48 @@
 
 **Spotify-Wrapped-style year-end stats for developers.**
 
-DevWrapped walks your Git activity for a given year, computes a rich set of
-metrics, and renders them as a shareable HTML page (and/or JSON). It runs
-locally or as a GitHub Action that publishes to GitHub Pages every January 1st.
+DevWrapped turns your year of Git activity into a shareable, animated story —
+a full-screen slide deck with animated counters, a contribution heatmap, and
+a per-archetype color theme. Runs locally, in CI, or as a reusable GitHub
+Action that publishes to GitHub Pages every January 1st.
 
 ```bash
 devwrapped generate --year 2024
-# → wrapped.html
+# → wrapped.html (play the slides, press → to advance)
 ```
-
-![DevWrapped sample — dark themed page with archetype card, KPIs, monthly bars, and story cards](public/index.html)
 
 ---
 
 ## Features
 
-- **Privacy-first** — metadata only (commit timestamps, repo names, SHAs). No
-  commit content, no diffs, no message bodies, no PII. Actor names can be
-  pseudonymized with a one-way hash via `--pseudonymize`.
-- **Rich metrics** — total commits, active days, longest/current streak, peak
-  hour, weekday distribution, weekend ratio, top repos, per-month histogram,
-  per-day series, language breakdown, pull-request volume and merge rate.
-- **Stories** — auto-generated narrative cards (peak month, rhythm, streaks,
-  languages, PRs, weekend warrior, main project, …).
-- **Archetypes** — one of 10 personalities with a matching color palette:
-  Night Owl, Early Bird, Weekend Warrior, Marathoner, Collaborator, Polyglot,
-  Sprint Coder, Deep Worker, Explorer, Steady Builder.
-- **Beautiful output** — self-contained HTML, responsive, archetype-themed,
-  no external JS/CSS dependencies, respects `prefers-reduced-motion`.
-- **Structured logging** — JSON logs on demand with automatic redaction of
-  tokens/credentials and log-injection protection.
-- **Resilient client** — retries, rate-limit backoff, `Retry-After` /
-  `X-RateLimit-Reset` aware, safe error surfaces.
-- **Runs anywhere** — local CLI, CI job, or a reusable composite GitHub Action
-  that publishes to GitHub Pages and uploads artifacts.
+- **Animated story deck** — Spotify-style full-screen slides with keyboard
+  (← →, space, esc), swipe, autoplay, per-slide progress bar, and per-archetype
+  theme. Graceful scroll fallback for users who disable JS.
+- **Contribution heatmap** — inline SVG GitHub-style grid coloured with the
+  archetype palette, with tooltips for every day.
+- **Privacy-first** — metadata only (timestamps, repo names, SHAs). No commit
+  content, no diffs, no PII. Actor names can be pseudonymized with a one-way
+  hash via `--pseudonymize`. Every page ships a strict CSP and
+  `referrer=no-referrer`.
+- **Rich metrics** — commits, active days, longest & current streak, peak hour,
+  weekday distribution, weekend ratio, top repos, per-month histogram,
+  per-day series, language breakdown, pull-request volume & merge rate,
+  review count & approval rate.
+- **11 archetypes** with themed palettes: Reviewer, Night Owl, Early Bird,
+  Weekend Warrior, Marathoner, Collaborator, Polyglot, Sprint Coder,
+  Deep Worker, Explorer, Steady Builder.
+- **Offline re-render** — `devwrapped render wrapped.json` rebuilds the HTML
+  without hitting the API. Great for iterating on styles.
+- **Multi-year index** — `devwrapped build-index --public-dir public`
+  auto-generates a landing page listing every year you've ever wrapped.
+- **ETag cache** — conditional requests (`If-None-Match`) stored under
+  `$XDG_CACHE_HOME/devwrapped`; re-runs in the same year are almost free.
+- **Resilient client** — retries with jitter, 429/403 rate-limit handling
+  (`Retry-After` / `X-RateLimit-Reset` aware), safe error surfaces.
+- **Structured logs** — JSON on demand with automatic redaction of tokens,
+  credentials, and query-string secrets, plus log-injection sanitation.
+- **Great CI story** — ruff + mypy + pytest on Python 3.10 / 3.11 / 3.12,
+  reusable composite Action with Pages publishing and artifact upload.
 
 ## Install
 
@@ -47,10 +55,10 @@ Requires Python 3.10+.
 
 ## Usage
 
-### 1. CLI
+### `devwrapped generate`
 
 ```bash
-export GITHUB_TOKEN=ghp_xxx   # any PAT with repo:read / public_repo access
+export GITHUB_TOKEN=ghp_xxx   # PAT with repo:read (plus 'repo' for private)
 devwrapped generate --year 2024
 ```
 
@@ -58,31 +66,62 @@ All flags:
 
 ```
 devwrapped generate
-  --provider github              # only github is supported today
-  --owner <login>                # defaults to the authenticated user
-  --repo <r1,r2,...>             # skip to auto-discover active repos
-  --year 2024                    # defaults to last year
-  --output wrapped.html          # .html or .json
-  --org                          # treat owner as an organization
-  --include-forks                # include forks in discovery
-  --include-archived             # include archived repos
-  --prs / --no-prs               # include PR events (default: on)
-  --languages / --no-languages   # compute language breakdown (default: on)
-  --pseudonymize                 # hash actor names in JSON output
+  --provider github                # only github today
+  --owner <login>                  # defaults to the authenticated user
+  --repo <r1,r2,...>               # skip to auto-discover
+  --year 2024                      # defaults to last year
+  --output wrapped.html            # .html or .json
+
+  --org                            # treat owner as an organization
+  --include-forks                  # include forks
+  --include-archived               # include archived repos
+  --private / --no-private         # include private repos (default: off)
+  --prs / --no-prs                 # include PR events (default: on)
+  --reviews / --no-reviews         # include reviews you submitted (default: on)
+  --languages / --no-languages     # language byte totals (default: on)
+  --pseudonymize                   # hash actor names in JSON output
+
+  --cache / --no-cache             # ETag disk cache (default: on)
+  --cache-dir <path>               # override cache directory
   --log-level DEBUG|INFO|...
-  --log-json                     # emit structured JSON logs to stderr
+  --log-json                       # emit structured JSON logs to stderr
 ```
 
-Environment variables:
+### `devwrapped render`
 
-| Variable                 | Purpose                                                 |
-| ------------------------ | ------------------------------------------------------- |
-| `GITHUB_TOKEN`           | **Required.** PAT or GITHUB_TOKEN for GitHub API.       |
-| `DEVWRAPPED_SHARE_URL`   | When set, renders a "copy share" block in the HTML.     |
-| `DEVWRAPPED_LOG_JSON=1`  | Emit logs as structured JSON on stderr.                 |
-| `DEVWRAPPED_LOG_LEVEL`   | DEBUG / INFO / WARNING / ERROR (default INFO).          |
+Re-render HTML from a previously generated JSON (no network):
 
-### 2. GitHub Action
+```bash
+devwrapped render wrapped.json --output wrapped.html
+```
+
+### `devwrapped build-index`
+
+Build a landing page listing every year found under `public/`:
+
+```bash
+devwrapped build-index --public-dir public
+```
+
+### `devwrapped cache-path` · `devwrapped cache-clear`
+
+```bash
+devwrapped cache-path    # → ~/.cache/devwrapped
+devwrapped cache-clear   # wipe all cached API responses
+```
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| 0    | Success |
+| 1    | Usage error (bad flags, invalid input file) |
+| 2    | Auth failure (missing or rejected `GITHUB_TOKEN`) |
+| 3    | No data (no active repos found for the year) |
+| 4    | Rate limited (retries exhausted) |
+| 10   | Internal error |
+
+## GitHub Action
 
 Use the reusable composite action shipped in `.github/actions/devwrapped`:
 
@@ -91,11 +130,16 @@ Use the reusable composite action shipped in `.github/actions/devwrapped`:
 name: DevWrapped
 on:
   workflow_dispatch:
+    inputs:
+      year:
+        description: "Year (defaults to last year)"
+        required: false
+        default: ""
   schedule:
     - cron: "0 0 1 1 *"   # Jan 1 every year
 
 permissions:
-  contents: write   # required for GitHub Pages publish
+  contents: write
 
 jobs:
   wrapped:
@@ -103,80 +147,93 @@ jobs:
     steps:
       - uses: <your-org>/devwrapped/.github/actions/devwrapped@main
         with:
-          year: "2024"           # optional; defaults to last year
-          owner: "your-login"    # optional; defaults to github.actor
-          is-org: "false"
-          output: "both"         # json | html | both
-          publish-pages: "true"  # publish rendered HTML to GH Pages
+          year: ${{ github.event.inputs.year }}
+          owner: ${{ github.repository_owner }}
+          output: both            # json | html | both
+          publish-pages: "true"   # publish HTML + rebuilt index to GH Pages
 ```
 
-The action:
+Every run publishes:
 
-1. Installs DevWrapped (`pip install .`).
-2. Runs `devwrapped generate` with `DEVWRAPPED_LOG_JSON=1` and the provided inputs.
-3. Copies `wrapped.html` into `public/<year>/index.html`.
-4. Publishes `./public` to GitHub Pages (via `peaceiris/actions-gh-pages`).
-5. Uploads `wrapped.json` and `wrapped.html` as workflow artifacts.
+- `public/<year>/index.html` — the slide deck + summary for that year.
+- `public/<year>/wrapped.json` — the full payload for programmatic use.
+- `public/index.html` — a landing page auto-generated from every year folder.
+- `wrapped.json` and `wrapped.html` as workflow artifacts.
+
+## Environment variables
+
+| Variable                 | Purpose                                                 |
+| ------------------------ | ------------------------------------------------------- |
+| `GITHUB_TOKEN`           | **Required.** PAT or GITHUB_TOKEN for GitHub API.       |
+| `DEVWRAPPED_SHARE_URL`   | When set, renders a share block in the HTML.            |
+| `DEVWRAPPED_LOG_JSON=1`  | Emit logs as structured JSON on stderr.                 |
+| `DEVWRAPPED_LOG_LEVEL`   | DEBUG / INFO / WARNING / ERROR (default INFO).          |
+| `XDG_CACHE_HOME`         | Controls where the ETag cache lives.                    |
 
 ## Architecture
 
 ```
-┌──────────────┐      ┌───────────────┐      ┌──────────────┐
-│  GitHub API  │ ───▶ │ GitHubClient  │ ───▶ │ Provider     │
-│  (commits +  │      │ (retries,     │      │ (normalizes  │
-│   PRs +      │      │  rate limits, │      │  into Events)│
-│   langs)     │      │  redaction)   │      └──────┬───────┘
-└──────────────┘      └───────────────┘             │
-                                                    ▼
- ┌────────────┐   ┌────────────┐   ┌──────────────┐   ┌─────────────┐
- │ Metrics    │ ─▶│ Stories    │ ─▶│ Archetypes   │ ─▶│ Renderers    │
- │ (streaks,  │   │ (cards)    │   │ (personality │   │ JSON / HTML  │
- │  hours,    │   │            │   │  + palette)  │   │ (Jinja2)     │
- │  weekdays) │   │            │   │              │   │              │
- └────────────┘   └────────────┘   └──────────────┘   └─────────────┘
+┌──────────────┐   ┌──────────────────┐   ┌───────────────┐
+│  GitHub API  │◄─►│   GitHubClient   │◄─►│ ResponseCache │
+│ (commits,    │   │ retries, 429/403 │   │ ETag on-disk  │
+│  PRs, search │   │ rate-limit, ETag │   │ 0o600 perms   │
+│  reviews,    │   │ redaction        │   └───────────────┘
+│  languages)  │   └─────────┬────────┘
+└──────────────┘             │
+                             ▼
+                 ┌───────────────────────┐
+                 │   GitHub Provider     │
+                 │ Commits + PRs + Revs  │
+                 └───────────┬───────────┘
+                             │ normalized Events
+                             ▼
+  ┌────────────┐   ┌────────────┐   ┌──────────────┐   ┌───────────────┐
+  │ Metrics    │ ─►│ Stories    │ ─►│ Archetypes   │ ─►│ Renderers      │
+  │ (streaks,  │   │ (cards)    │   │ (personality │   │ HTML slide deck│
+  │  hours,    │   │            │   │  + palette)  │   │ JSON           │
+  │  weekdays, │   │            │   │              │   │ SVG heatmap    │
+  │  heatmap)  │   │            │   │              │   │ multi-year idx │
+  └────────────┘   └────────────┘   └──────────────┘   └───────────────┘
 ```
 
 Layout:
 
 ```
 devwrapped/
-  cli.py                     # Typer CLI with rich progress + structured logs
-  logging_utils.py           # JSON formatter + redaction + correlation IDs
-  model/events.py            # Normalized Event dataclass (actor hashable)
+  cli.py                     # Typer CLI (generate / render / build-index / cache-*)
+  exit_codes.py              # ExitCode IntEnum
+  cache.py                   # ETag on-disk cache
+  logging_utils.py           # JSON formatter, redaction, correlation IDs
+  model/events.py            # Normalized Event dataclass (pseudonymize helper)
   providers/
     base.py                  # Provider ABC
     github/
-      client.py              # Resilient REST client (retries, rate limits)
-      fetch.py               # Commit + PR fetchers
-      discovery.py           # Active-repo discovery
-      provider.py            # GitHubProvider (implements Provider)
+      client.py              # Resilient REST client (retries, rate limits, cache)
+      fetch.py               # Commit + PR + Review fetchers
+      discovery.py           # Active-repo discovery (forks/archived/private)
+      provider.py            # GitHubProvider
   metrics/engine.py          # All the numbers
-  stories/engine.py          # Narrative cards derived from metrics
-  archetypes/engine.py       # 10 archetypes with themed palettes
+  stories/engine.py          # Narrative cards
+  archetypes/engine.py       # 11 archetypes with themed palettes
   render/
-    json.py                  # JSONRenderer (pseudonymize option)
-    html.py                  # HTMLRenderer (Jinja2, PackageLoader)
-  templates/wrapped.html     # Dark, themed, responsive template
-
-.github/
-  actions/devwrapped/        # Reusable composite Action
-  workflows/
-    ci.yml                   # ruff + pytest across Python 3.10–3.12
-    devwrapped.yml           # Annual scheduled run
-    devwrapped-test.yml      # Manual smoke test
-
-tests/                       # 43 tests across all modules
+    json.py                  # JSON payload (pseudonymize option)
+    html.py                  # HTML via Jinja2 + PackageLoader
+    heatmap.py               # Inline-SVG contribution heatmap
+    index.py                 # Multi-year landing page
+  templates/wrapped.html     # Slide deck + scroll summary (CSP + reduced-motion)
 ```
 
 ## Privacy & security
 
-- TLS-only (`https://api.github.com`), never downgrades.
-- `Authorization` headers and common secret formats (GitHub, AWS, Stripe,
-  Google, JWT, private keys, `?token=…` query params) are redacted from all
-  log output via `devwrapped.logging_utils.redact`.
+- TLS only (`https://api.github.com`); never downgrades.
+- `Authorization` headers and common secret formats (GitHub PAT, AWS, Stripe,
+  Google, JWT, private keys, `?token=…`) are redacted from every log line via
+  `devwrapped.logging_utils.redact`.
 - Log messages are sanitized against log injection (CR/LF stripped).
-- Actor names can be pseudonymized with a one-way SHA-256 hash for JSON output.
-- The CLI never writes the GitHub token to disk or to stdout.
+- Cache files live under a 0o700 directory and are written 0o600.
+- Actor names can be pseudonymized with a one-way SHA-256 hash for JSON.
+- HTML output ships a strict Content-Security-Policy meta tag,
+  `referrer=no-referrer`, and no external assets.
 - No runtime network egress other than `api.github.com`.
 
 ## Development
@@ -186,13 +243,11 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Tests
-pytest
+pytest              # 63 tests
+ruff check .        # lint
+mypy                # type-check
+pre-commit install  # enable local hooks
 
-# Lint
-ruff check .
-
-# Run the CLI against your own account
 export GITHUB_TOKEN=ghp_xxx
 devwrapped generate --year 2024 --output wrapped.html
 open wrapped.html
@@ -201,10 +256,10 @@ open wrapped.html
 ## Roadmap
 
 - GitLab, Bitbucket, Gerrit providers (trivial to add — implement `Provider`).
-- Review comments and review counts as separate event types.
-- Per-repo drill-down pages.
-- PNG share cards for social media.
-- Optional "server mode" for teams.
+- PNG/OG share cards via Pillow, for X/LinkedIn link unfurls.
+- Async fetches (`httpx`) for huge orgs.
+- Teammate mode — merge multiple `wrapped.json` files into a team summary.
+- Year-over-year delta cards ("+37% commits", "new archetype").
 
 ## License
 

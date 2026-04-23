@@ -10,6 +10,7 @@ from devwrapped.providers.github.client import GitHubClient
 from devwrapped.providers.github.fetch import (
     GitHubCommitFetcher,
     GitHubPullRequestFetcher,
+    GitHubReviewFetcher,
 )
 
 
@@ -51,6 +52,16 @@ class GitHubProvider(Provider):
         ).fetch_pull_requests(year)
 
         return [*commit_events, *pr_events]
+
+    def fetch_reviews(self, year: int) -> list:
+        """Fetch review events authored by :attr:`author` across *all* repos.
+
+        Reviews are user-scoped rather than repo-scoped, so this is called
+        once per run rather than once per repo.
+        """
+        if not self.author:
+            return []
+        return GitHubReviewFetcher(client=self.client, author=self.author).fetch_reviews(year)
 
     # Handy when the caller wants to enumerate languages for richer stories.
     def repo_languages(self, repos: Iterable[str]) -> dict[str, int]:

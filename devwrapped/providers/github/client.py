@@ -20,6 +20,7 @@ from typing import Any
 
 import requests
 
+from devwrapped.cache import CachedResponse, ResponseCache
 from devwrapped.logging_utils import log_event, redact
 
 log = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class GitHubClient:
         *,
         session: requests.Session | None = None,
         timeout: float | None = None,
+        cache: ResponseCache | None = None,
     ):
         self.token = token or os.getenv("GITHUB_TOKEN")
         if not self.token:
@@ -54,6 +56,7 @@ class GitHubClient:
             )
 
         self.timeout = timeout or self.DEFAULT_TIMEOUT
+        self.cache = cache
         self.session = session or requests.Session()
         self.session.headers.update(
             {
@@ -160,7 +163,26 @@ class GitHubClient:
     # ---- public helpers ---------------------------------------------------
 
     def get(self, path: str, params: dict | None = None) -> Any:
-        response = self._request("GET", path, params=params)
+        url = f"{self.BASE_URL}{path}"
+        cache_key = None
+        cached: CachedResponse | None = None
+        extra_headers: dict[str, str] = {}
+
+        if self.cache is not None:
+            cache_key = ResponseCache.make_key("GET", url, params)
+            cached = self.cache.get(cache_key)
+            if cached:
+                if cached.etag:
+                    extra_headers["If-None-Match"] = cached.etag
+                if cached.last_modified:
+                    extra_headers["If-Modified-Since"] = cached.last_modified
+
+        response = self._request("GET", path, params=params, headers=extra_headers or None)
+
+        if response.status_code == 304 and cached is not None:
+            log_event(log, logging.DEBUG, "github.cache.hit", path=path)
+            return cached.body
+
         if response.status_code >= 400:
             body: Any
             try:
@@ -179,10 +201,23 @@ class GitHubClient:
 
         if not response.content:
             return None
+
         try:
-            return response.json()
+            body = response.json()
         except ValueError:
-            return response.text
+            body = response.text
+
+        if self.cache is not None and cache_key is not None and response.status_code == 200:
+            self.cache.set(
+                cache_key,
+                CachedResponse(
+                    status=200,
+                    body=body,
+                    etag=response.headers.get("ETag"),
+                    last_modified=response.headers.get("Last-Modified"),
+                ),
+            )
+        return body
 
     def get_paginated(self, path: str, params: dict | None = None) -> Iterator[dict]:
         params = dict(params or {})

@@ -11,15 +11,17 @@ def test_generate_command_writes_json(monkeypatch, tmp_path):
 
     monkeypatch.setenv("GITHUB_TOKEN", "fake")
 
-    # Stub out GitHubClient so it doesn't require network.
     class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
         def get_authenticated_user(self):
             return "tester"
 
         def list_languages(self, owner, repo):
             return {}
 
-    monkeypatch.setattr("devwrapped.cli.GitHubClient", lambda: FakeClient())
+    monkeypatch.setattr("devwrapped.cli.GitHubClient", FakeClient)
 
     class FakeProvider:
         def __init__(self, *args, **kwargs):
@@ -39,6 +41,9 @@ def test_generate_command_writes_json(monkeypatch, tmp_path):
                 )
             ]
 
+        def fetch_reviews(self, year):
+            return []
+
     monkeypatch.setattr("devwrapped.cli.GitHubProvider", FakeProvider)
 
     output_file = tmp_path / "wrapped.json"
@@ -51,6 +56,8 @@ def test_generate_command_writes_json(monkeypatch, tmp_path):
             "--year", "2024",
             "--output", str(output_file),
             "--no-languages",
+            "--no-cache",
+            "--no-reviews",
         ],
     )
 
