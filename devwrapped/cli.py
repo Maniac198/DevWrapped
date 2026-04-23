@@ -20,9 +20,7 @@ from devwrapped.compare import compute_yoy, load_payload
 from devwrapped.exit_codes import ExitCode
 from devwrapped.logging_utils import configure_logging, log_event, new_correlation_id
 from devwrapped.metrics.engine import MetricsEngine
-from devwrapped.providers.github import GitHubProvider
-from devwrapped.providers.github.client import GitHubAPIError, GitHubClient
-from devwrapped.providers.github.discovery import discover_active_repos
+from devwrapped.providers.registry import available_backends, get_backend
 from devwrapped.render.heatmap import render_heatmap
 from devwrapped.render.html import HTMLRenderer
 from devwrapped.render.index import build_index
@@ -41,18 +39,18 @@ log = logging.getLogger("devwrapped.cli")
 
 @app.command()
 def generate(
-    provider: str = typer.Option("github", "--provider", "-p", help="Source provider (only 'github' is supported today)."),
-    owner: str | None = typer.Option(None, "--owner", "-o", help="GitHub user or org. Defaults to the authenticated user."),
+    provider: str = typer.Option("github", "--provider", "-p", help=f"Source provider (one of: {', '.join(available_backends())})."),
+    owner: str | None = typer.Option(None, "--owner", "-o", help="GitHub user/org or Bitbucket workspace. Defaults to the authenticated user."),
     repo: str | None = typer.Option(None, "--repo", "-r", help="Comma-separated list of repos. Skip to auto-discover active repos."),
     year: int | None = typer.Option(None, "--year", "-y", help="Year to summarize. Defaults to last year."),
     output: str | None = typer.Option(None, "--output", help="Output file: .html or .json. Defaults to wrapped.html."),
-    is_org: bool = typer.Option(False, "--org", help="Treat the owner as an organization."),
+    is_org: bool = typer.Option(False, "--org", help="(GitHub only) Treat the owner as an organization."),
     include_forks: bool = typer.Option(False, "--include-forks", help="Include forked repos in discovery."),
-    include_archived: bool = typer.Option(False, "--include-archived", help="Include archived repos in discovery."),
+    include_archived: bool = typer.Option(False, "--include-archived", help="(GitHub only) Include archived repos in discovery."),
     include_private: bool = typer.Option(False, "--private/--no-private", help="Include private repositories visible to the token."),
     include_prs: bool = typer.Option(True, "--prs/--no-prs", help="Include pull request events."),
-    include_reviews: bool = typer.Option(True, "--reviews/--no-reviews", help="Include pull request reviews the user submitted."),
-    include_languages: bool = typer.Option(True, "--languages/--no-languages", help="Include per-language byte totals."),
+    include_reviews: bool = typer.Option(True, "--reviews/--no-reviews", help="Include pull request reviews (GitHub only; Bitbucket is skipped)."),
+    include_languages: bool = typer.Option(True, "--languages/--no-languages", help="Include per-language totals."),
     pseudonymize: bool = typer.Option(False, "--pseudonymize", help="Hash actor names in the JSON output."),
     compare: str | None = typer.Option(None, "--compare", help="Path to a prior wrapped.json for year-over-year delta."),
     og_card: bool = typer.Option(True, "--og/--no-og", help="Generate an og:image PNG share card (requires Pillow)."),
@@ -61,14 +59,19 @@ def generate(
     log_level: str = typer.Option("INFO", "--log-level", help="Log level (DEBUG, INFO, WARNING, ERROR)."),
     log_json: bool = typer.Option(False, "--log-json", help="Emit structured JSON logs to stderr."),
 ) -> None:
-    """Generate a DevWrapped report for the given user/org/year."""
+    """Generate a DevWrapped report for the given user/workspace/year."""
     configure_logging(level=log_level, json_output=log_json)
     correlation_id = new_correlation_id()
     log_event(log, logging.INFO, "run.started", correlation_id=correlation_id, provider=provider)
 
-    if provider != "github":
-        console.print(f"[red]Provider '{provider}' is not supported yet.[/red]")
-        raise typer.Exit(code=ExitCode.USAGE_ERROR)
+    try:
+        backend = get_backend(provider)
+    except KeyError:
+        console.print(
+            f"[red]Provider '{provider}' is not supported. Available: "
+            f"{', '.join(available_backends())}[/red]"
+        )
+        raise typer.Exit(code=ExitCode.USAGE_ERROR) from None
 
     if year is None:
         year = datetime.now(timezone.utc).year - 1
@@ -78,24 +81,26 @@ def generate(
         console.print("[red]Unsupported output format. Use .json or .html.[/red]")
         raise typer.Exit(code=ExitCode.USAGE_ERROR)
 
-    console.print(f"[bold green]DevWrapped[/bold green] v{__version__} · year [bold]{year}[/bold]")
+    console.print(
+        f"[bold green]DevWrapped[/bold green] v{__version__} · [cyan]{backend.name}[/cyan] · year [bold]{year}[/bold]"
+    )
 
     cache = ResponseCache(path=cache_dir, enabled=cache_enabled)
     if cache_enabled:
         console.print(f"💾 Cache: [dim]{cache.path}[/dim]")
 
     try:
-        client = GitHubClient(cache=cache)
+        client = backend.build_client(cache=cache)
     except RuntimeError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=ExitCode.AUTH_FAILURE) from exc
 
     if owner is None:
-        with _spinner("Detecting GitHub user…"):
+        with _spinner(f"Detecting {backend.owner_term}…"):
             try:
-                owner = client.get_authenticated_user()
-            except GitHubAPIError as exc:
-                console.print(f"[red]Could not detect user: GitHub API {exc.status}[/red]")
+                owner = backend.authenticated_user(client)
+            except Exception as exc:  # provider-specific API error
+                console.print(f"[red]Could not detect {backend.owner_term}: {exc}[/red]")
                 raise typer.Exit(code=ExitCode.AUTH_FAILURE) from exc
         console.print(f"👤 Authenticated as [bold]{owner}[/bold]")
 
@@ -103,7 +108,7 @@ def generate(
         repos = [r.strip() for r in repo.split(",") if r.strip()]
     else:
         with _spinner("Discovering active repositories…"):
-            repos = discover_active_repos(
+            repos = backend.discover_active_repos(
                 client=client,
                 owner=owner,
                 year=year,
@@ -117,7 +122,9 @@ def generate(
         console.print("[yellow]No active repositories found for this year.[/yellow]")
         raise typer.Exit(code=ExitCode.NO_DATA)
 
-    console.print(f"📦 Found [bold]{len(repos)}[/bold] active repositor{'y' if len(repos) == 1 else 'ies'}")
+    console.print(
+        f"📦 Found [bold]{len(repos)}[/bold] active repositor{'y' if len(repos) == 1 else 'ies'}"
+    )
 
     all_events: list = []
     languages_total: dict[str, int] = {}
@@ -131,7 +138,7 @@ def generate(
         fetch_task = progress.add_task("Fetching events", total=len(repos))
         for repo_name in repos:
             progress.update(fetch_task, description=f"📥 {owner}/{repo_name}")
-            provider_impl = GitHubProvider(
+            provider_impl = backend.provider_factory(
                 owner=owner,
                 repo=repo_name,
                 client=client,
@@ -140,27 +147,38 @@ def generate(
             )
             try:
                 all_events.extend(provider_impl.fetch_events(year))
-            except GitHubAPIError as exc:
+            except Exception as exc:
                 console.print(
-                    f"[yellow]Skipping {owner}/{repo_name} ({exc.status}).[/yellow]"
+                    f"[yellow]Skipping {owner}/{repo_name} ({exc}).[/yellow]"
                 )
-                log_event(log, logging.WARNING, "repo.skip", owner=owner, repo=repo_name, status=exc.status)
-
-            if include_languages:
-                for lang, size in client.list_languages(owner, repo_name).items():
-                    languages_total[lang] = languages_total.get(lang, 0) + size
+                log_event(log, logging.WARNING, "repo.skip", owner=owner, repo=repo_name, error=str(exc))
 
             progress.advance(fetch_task)
 
+    if include_languages:
+        with _spinner("Aggregating languages…"):
+            # Using the first provider instance is fine — language aggregation
+            # isn't repo-scoped in our adapters.
+            aggregator = backend.provider_factory(
+                owner=owner, repo=repos[0], client=client, author=owner,
+            )
+            languages_total = aggregator.repo_languages(repos) if hasattr(aggregator, "repo_languages") else {}
+
     if include_reviews:
-        with _spinner("Fetching reviews you've submitted…"):
-            try:
-                review_provider = GitHubProvider(
-                    owner=owner, repo="_reviews_", client=client, author=owner
-                )
-                all_events.extend(review_provider.fetch_reviews(year))
-            except GitHubAPIError as exc:
-                console.print(f"[yellow]Review fetch failed ({exc.status}); continuing.[/yellow]")
+        if backend.supports_reviews:
+            with _spinner("Fetching reviews you've submitted…"):
+                try:
+                    review_provider = backend.provider_factory(
+                        owner=owner, repo=repos[0], client=client, author=owner,
+                    )
+                    if hasattr(review_provider, "fetch_reviews"):
+                        all_events.extend(review_provider.fetch_reviews(year))
+                except Exception as exc:
+                    console.print(f"[yellow]Review fetch failed ({exc}); continuing.[/yellow]")
+        else:
+            console.print(
+                f"[dim]Reviews are not supported on {backend.name} — skipping.[/dim]"
+            )
 
     console.print(f"📊 Collected [bold]{len(all_events)}[/bold] events")
 
@@ -175,10 +193,7 @@ def generate(
     else:
         comparison_payload = _auto_detect_previous(year=year, output_path=output_path)
 
-    current_payload_preview = {
-        "year": year,
-        "metrics": metrics,
-    }
+    current_payload_preview = {"year": year, "metrics": metrics}
     yoy = compute_yoy(comparison_payload, current_payload_preview)
     if yoy:
         metrics["yoy"] = yoy
@@ -186,7 +201,6 @@ def generate(
     stories = StoryEngine(metrics).generate()
     archetype = ArchetypeEngine(metrics).classify()
 
-    # Re-apply YoY archetype delta using the resolved archetype.
     if yoy and comparison_payload:
         yoy["archetype_changed"] = _refresh_archetype_change(
             previous=comparison_payload.get("archetype"), current=archetype
@@ -218,11 +232,7 @@ def generate(
             output_path.stem + "-og.png" if output_path.stem != "wrapped" else "wrapped-og.png"
         )
         result = render_og_card(
-            card_path,
-            year=year,
-            archetype=archetype,
-            metrics=metrics,
-            owner=owner,
+            card_path, year=year, archetype=archetype, metrics=metrics, owner=owner,
         )
         if result:
             og_image_rel = result.name
@@ -235,7 +245,7 @@ def generate(
             stories=stories,
             archetype=archetype,
             year=year,
-            provider=provider,
+            provider=backend.name,
             version=__version__,
             pseudonymize_actors=pseudonymize,
             heatmap_svg=heatmap_svg,
@@ -248,7 +258,7 @@ def generate(
             share_text=share_text,
             share_url=share_url,
             year=year,
-            provider=provider,
+            provider=backend.name,
             heatmap_svg=heatmap_svg,
             og_image=og_image_rel,
             cache_hits=cache_hits,
@@ -418,7 +428,6 @@ def _default(ctx: typer.Context) -> None:
 
 
 def _auto_detect_previous(*, year: int, output_path: Path) -> dict | None:
-    """Look for ``wrapped.json`` from the prior year in conventional locations."""
     prev = year - 1
     candidates = [
         output_path.parent / f"wrapped-{prev}.json",

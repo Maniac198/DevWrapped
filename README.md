@@ -48,6 +48,9 @@ devwrapped generate --year 2024
   auto-generates a landing page listing every year you've ever wrapped.
 - **ETag cache** — conditional requests (`If-None-Match`) stored under
   `$XDG_CACHE_HOME/devwrapped`; re-runs in the same year are almost free.
+- **Two providers** — GitHub (default) and Bitbucket Cloud. Switch with
+  `--provider bitbucket`. Adding more providers is a small, typed recipe
+  in `devwrapped/providers/registry.py`.
 - **Resilient client** — retries with jitter, 429/403 rate-limit handling
   (`Retry-After` / `X-RateLimit-Reset` aware), safe error surfaces.
 - **Structured logs** — JSON on demand with automatic redaction of tokens,
@@ -69,28 +72,48 @@ Requires Python 3.10+.
 
 ### `devwrapped generate`
 
+**GitHub (default provider):**
+
 ```bash
 export GITHUB_TOKEN=ghp_xxx   # PAT with repo:read (plus 'repo' for private)
 devwrapped generate --year 2024
 ```
 
+**Bitbucket Cloud:**
+
+```bash
+# Pick one:
+export BITBUCKET_TOKEN=<workspace-or-repo-access-token>       # preferred
+# or:
+export BITBUCKET_USERNAME=alice
+export BITBUCKET_APP_PASSWORD=<app-password-with-repo-read>
+
+devwrapped generate --provider bitbucket --owner <workspace> --year 2024
+```
+
+Create a Bitbucket app password at
+<https://bitbucket.org/account/settings/app-passwords/> with at least
+`Repositories: Read` (add `Pull requests: Read` to include PR events). For
+CI, a workspace access token (Settings → Workspace settings → OAuth consumers
+or access tokens) is preferred over app passwords.
+
 All flags:
 
 ```
 devwrapped generate
-  --provider github                # only github today
-  --owner <login>                  # defaults to the authenticated user
+  --provider github|bitbucket      # default: github
+  --owner <login|workspace>        # defaults to the authenticated user
   --repo <r1,r2,...>               # skip to auto-discover
   --year 2024                      # defaults to last year
   --output wrapped.html            # .html or .json
 
-  --org                            # treat owner as an organization
+  --org                            # (github) treat owner as an organization
   --include-forks                  # include forks
-  --include-archived               # include archived repos
+  --include-archived               # (github) include archived repos
   --private / --no-private         # include private repos (default: off)
   --prs / --no-prs                 # include PR events (default: on)
-  --reviews / --no-reviews         # include reviews you submitted (default: on)
-  --languages / --no-languages     # language byte totals (default: on)
+  --reviews / --no-reviews         # (github) include reviews submitted
+  --languages / --no-languages     # language totals (default: on)
   --pseudonymize                   # hash actor names in JSON output
 
   --compare <wrapped.json>         # year-over-year delta vs this file
@@ -101,6 +124,20 @@ devwrapped generate
   --log-level DEBUG|INFO|...
   --log-json                       # emit structured JSON logs to stderr
 ```
+
+### Provider feature matrix
+
+| Feature                       | GitHub | Bitbucket Cloud |
+| ----------------------------- | :----: | :-------------: |
+| Commits                       |  ✓     |   ✓             |
+| Pull requests                 |  ✓     |   ✓             |
+| Reviews submitted by user     |  ✓     |   — (model differs; planned) |
+| Language totals               | bytes  | primary-language counts |
+| Private repos (opt-in)        |  ✓     |   ✓             |
+| Archived repo filter          |  ✓     |   — (not exposed) |
+| Org vs user distinction       |  ✓     |   — (workspaces only) |
+| ETag disk cache               |  ✓     |   ✓             |
+| Retries, 429-aware            |  ✓     |   ✓             |
 
 If `--compare` is not specified, DevWrapped auto-detects a previous year from
 `./wrapped-<year-1>.json`, `./<year-1>.json`, or
@@ -311,13 +348,15 @@ so there's nothing to vendor on your side.
 
 ## Environment variables
 
-| Variable                 | Purpose                                                 |
-| ------------------------ | ------------------------------------------------------- |
-| `GITHUB_TOKEN`           | **Required.** PAT or GITHUB_TOKEN for GitHub API.       |
-| `DEVWRAPPED_SHARE_URL`   | When set, renders a share block in the HTML.            |
-| `DEVWRAPPED_LOG_JSON=1`  | Emit logs as structured JSON on stderr.                 |
-| `DEVWRAPPED_LOG_LEVEL`   | DEBUG / INFO / WARNING / ERROR (default INFO).          |
-| `XDG_CACHE_HOME`         | Controls where the ETag cache lives.                    |
+| Variable                                               | Purpose                                                   |
+| ------------------------------------------------------ | --------------------------------------------------------- |
+| `GITHUB_TOKEN`                                         | Required for `--provider github`. PAT or CI-supplied token. |
+| `BITBUCKET_TOKEN` / `BITBUCKET_ACCESS_TOKEN`           | Bearer token for `--provider bitbucket` (preferred).      |
+| `BITBUCKET_USERNAME` + `BITBUCKET_APP_PASSWORD`        | Basic-auth fallback for `--provider bitbucket`.           |
+| `DEVWRAPPED_SHARE_URL`                                 | When set, renders a share block in the HTML.              |
+| `DEVWRAPPED_LOG_JSON=1`                                | Emit logs as structured JSON on stderr.                   |
+| `DEVWRAPPED_LOG_LEVEL`                                 | DEBUG / INFO / WARNING / ERROR (default INFO).            |
+| `XDG_CACHE_HOME`                                       | Controls where the ETag cache lives.                      |
 
 ## Architecture
 
