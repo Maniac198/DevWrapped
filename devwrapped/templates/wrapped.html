@@ -425,6 +425,39 @@
     footer { margin-top: 4rem; text-align: center; color: var(--muted); font-size: 0.8rem; }
     footer a { color: var(--accent); }
 
+    .hero-actions {
+      margin-top: 1.25rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .year-switcher {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .year-switcher label { color: var(--muted); }
+    .year-switcher select {
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.35rem 0.5rem;
+      font: inherit;
+      font-variant-numeric: tabular-nums;
+    }
+    .year-switcher select:focus {
+      outline: 2px solid color-mix(in srgb, var(--primary) 60%, transparent);
+      outline-offset: 1px;
+    }
+
     @media (max-width: 640px) {
       .nav-btn { width: 40px; height: 40px; font-size: 1.1rem; }
       .nav-btn.prev { left: 10px; }
@@ -590,8 +623,14 @@
       <h1>{{ year }} in Code</h1>
       <p class="subtitle">Generated {{ generated_at }}</p>
 
-      <div style="margin-top: 1.25rem;">
+      <div class="hero-actions">
         <button class="btn" id="open-deck">▶ Play the slides</button>
+        <div class="year-switcher" id="year-switcher" hidden>
+          <label for="year-select">Year:</label>
+          <select id="year-select" aria-label="Switch year">
+            <option value="{{ year }}" selected>{{ year }}</option>
+          </select>
+        </div>
       </div>
 
       {% if archetype %}
@@ -911,6 +950,40 @@
         // Auto-open deck on first load so users see the motion immediately.
         setTimeout(() => enterDeck(), 150);
       }
+
+      // Year switcher: fetch ../years.json and populate the dropdown if we
+      // are living under public/<year>/. Silently no-op when the file isn't
+      // reachable (e.g., opened from local disk).
+      (function populateYearSwitcher() {
+        const wrapper = document.getElementById("year-switcher");
+        const select = document.getElementById("year-select");
+        if (!wrapper || !select) return;
+        const currentYear = parseInt({{ year }}, 10);
+        fetch("../years.json", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            if (!data || !Array.isArray(data.years) || data.years.length < 2) return;
+            // Years come descending from build-index; preserve that order.
+            select.innerHTML = "";
+            data.years.forEach((entry) => {
+              const opt = document.createElement("option");
+              opt.value = String(entry.year);
+              const emoji = entry.archetype_emoji ? entry.archetype_emoji + " " : "";
+              const name = entry.archetype_name ? " · " + entry.archetype_name : "";
+              opt.textContent = emoji + entry.year + name;
+              if (parseInt(entry.year, 10) === currentYear) opt.selected = true;
+              select.appendChild(opt);
+            });
+            wrapper.hidden = false;
+          })
+          .catch(() => { /* quiet fallback */ });
+
+        select.addEventListener("change", () => {
+          const year = select.value;
+          if (!/^\d{4}$/.test(year)) return;
+          window.location.href = "../" + year + "/";
+        });
+      })();
 
       // React to back/forward nav between deep-linked slides.
       window.addEventListener("hashchange", () => {

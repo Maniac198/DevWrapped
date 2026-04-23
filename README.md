@@ -201,11 +201,26 @@ jobs:
 After a successful run, the site at
 `https://<owner>.github.io/<repo>/` contains:
 
-- `index.html` — a landing page auto-generated from every year folder.
-- `<year>/index.html` — the slide deck + summary for that year.
+- `index.html` — a landing page with a **"Jump to year" input** that accepts
+  any published year, plus the list of reports and a `?year=YYYY` URL
+  shortcut (e.g. `https://<owner>.github.io/<repo>/?year=2023` redirects
+  straight into that year's report).
+- `years.json` — machine-readable manifest (`{"years": [{year, archetype, ...}]}`)
+  consumed by the per-year pages to populate their built-in year switcher.
+- `<year>/index.html` — the slide deck + summary for that year. Shows a
+  "Year:" dropdown in the hero so readers can jump to any other year
+  without returning to the landing page.
 - `<year>/wrapped.json` — the full payload for programmatic use.
 - `<year>/og.png` — the Open Graph share card.
 - `.nojekyll` — opt-out so Pages doesn't try to process the site with Jekyll.
+
+### Picking a year
+
+Three equivalent ways to get to a specific year's report:
+
+- **URL**: `https://<owner>.github.io/<repo>/?year=2023` → redirects to `/2023/`.
+- **Landing page**: type a year into the input box and press Enter.
+- **Any year's page**: change the "Year:" dropdown in the hero.
 
 Workflow artifacts (`wrapped.json`, `wrapped.html`, `wrapped-og.png`) are
 also attached to each run for manual download.

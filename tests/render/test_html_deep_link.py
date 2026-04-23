@@ -59,6 +59,24 @@ def test_html_renders_og_meta_when_image_given(tmp_path):
     assert 'twitter:card' in html
 
 
+def test_html_includes_year_switcher_scaffold(tmp_path):
+    out = tmp_path / "wrapped.html"
+    HTMLRenderer(out).render(
+        metrics=_min_metrics(),
+        archetype=None,
+        year=2024,
+        provider="github",
+    )
+    html = out.read_text()
+    # Switcher markup is always rendered (hidden by JS until years.json loads).
+    assert 'id="year-switcher"' in html
+    assert 'id="year-select"' in html
+    # The population script knows how to fetch the manifest.
+    assert '../years.json' in html
+    # Default option reflects the current year.
+    assert '<option value="2024" selected>2024</option>' in html
+
+
 def test_html_renders_cache_indicator(tmp_path):
     out = tmp_path / "wrapped.html"
     HTMLRenderer(out).render(
