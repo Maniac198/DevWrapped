@@ -33,14 +33,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+share = [
+  "Pillow>=10.3",
+]
 dev = [
   "pytest>=8.0",
+  "pytest-cov>=5.0",
   "pytest-mock>=3.14",
   "responses>=0.25",
   "ruff>=0.6",
   "mypy>=1.11",
   "types-requests>=2.31",
   "pre-commit>=3.7",
+  "Pillow>=10.3",
 ]
 
 [project.scripts]
@@ -58,11 +63,24 @@ devwrapped = ["templates/*.html"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers --cov=devwrapped --cov-report=term-missing --cov-fail-under=80"
 testpaths = ["tests"]
 pythonpath = ["."]
-# Avoid the "duplicate basename" collision by importing tests as packages.
-# Requires each tests/ subdir to have an __init__.py (we provide them).
+
+[tool.coverage.run]
+branch = true
+source = ["devwrapped"]
+omit = ["devwrapped/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
 
 [tool.ruff]
 line-length = 100

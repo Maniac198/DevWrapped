@@ -25,6 +25,7 @@ class StoryEngine:
             self._pull_request_story,
             self._review_story,
             self._language_story,
+            self._yoy_story,
         ]
 
         stories: list[Story] = []
@@ -192,6 +193,49 @@ class StoryEngine:
                     f"repositor{'y' if repos == 1 else 'ies'} ({approval_rate}% approvals)."
                 ),
                 "emoji": "🔍",
+            }
+        ]
+
+    # 10. Year-over-year ("How you changed")
+    def _yoy_story(self) -> list[Story]:
+        yoy = self.metrics.get("yoy")
+        if not yoy:
+            return []
+        prev = yoy.get("previous_year")
+        parts: list[str] = []
+
+        commits = yoy.get("total_commits") or {}
+        if commits.get("pct") is not None:
+            arrow = "▲" if commits["diff"] > 0 else ("▼" if commits["diff"] < 0 else "→")
+            pct = abs(commits["pct"])
+            pct_str = f"{pct:g}"
+            parts.append(f"commits {arrow} {pct_str}%")
+        elif commits.get("current"):
+            parts.append(f"{commits['current']} commits this year")
+
+        days = yoy.get("active_days") or {}
+        if days.get("diff") is not None and days.get("diff") != 0:
+            arrow = "▲" if days["diff"] > 0 else "▼"
+            parts.append(f"active days {arrow} {abs(days['diff'])}")
+
+        archetype = yoy.get("archetype_changed") or {}
+        if archetype.get("changed") and archetype.get("to_name"):
+            parts.append(f"became a {archetype['to_name']}")
+
+        new_langs = yoy.get("new_languages") or []
+        if new_langs:
+            parts.append("picked up " + ", ".join(new_langs))
+
+        if not parts:
+            return []
+
+        text = f"Since {prev}, you " + ", ".join(parts) + "."
+        return [
+            {
+                "id": "yoy",
+                "title": f"How you changed from {prev}",
+                "text": text,
+                "emoji": "📈",
             }
         ]
 

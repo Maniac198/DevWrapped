@@ -36,7 +36,7 @@ runs:
 
     - name: Install DevWrapped
       shell: bash
-      run: pip install .
+      run: pip install '.[share]'
 
     - name: Resolve parameters
       id: params
@@ -94,6 +94,9 @@ runs:
         fi
         if [ -f wrapped.json ]; then
           cp wrapped.json public/"$YEAR"/wrapped.json
+        fi
+        if [ -f wrapped-og.png ]; then
+          cp wrapped-og.png public/"$YEAR"/og.png
         fi
         devwrapped build-index --public-dir public
 

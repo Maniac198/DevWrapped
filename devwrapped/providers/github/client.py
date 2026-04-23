@@ -57,6 +57,7 @@ class GitHubClient:
 
         self.timeout = timeout or self.DEFAULT_TIMEOUT
         self.cache = cache
+        self.cache_hits = 0
         self.session = session or requests.Session()
         self.session.headers.update(
             {
@@ -180,6 +181,7 @@ class GitHubClient:
         response = self._request("GET", path, params=params, headers=extra_headers or None)
 
         if response.status_code == 304 and cached is not None:
+            self.cache_hits += 1
             log_event(log, logging.DEBUG, "github.cache.hit", path=path)
             return cached.body
 

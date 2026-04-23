@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;" />
+  <title>DevWrapped {{ year }}{% if archetype %} · {{ archetype.name }}{% endif %}</title>
+  <meta property="og:title" content="DevWrapped {{ year }}{% if archetype %} · {{ archetype.emoji }} {{ archetype.name }}{% endif %}" />
+  <meta property="og:description" content="My developer year in code — {{ metrics.total_commits }} commits across {{ metrics.active_days }} active days." />
+  {% if share_url %}<meta property="og:url" content="{{ share_url }}" />{% endif %}
+  {% if og_image %}
+  <meta property="og:image" content="{{ og_image }}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="{{ og_image }}" />
+  {% endif %}
+
+  {% set palette = (archetype.palette if archetype and archetype.palette else {"primary": "#22c55e", "secondary": "#0f172a", "accent": "#bbf7d0"}) %}
+  <style>
+    :root {
+      --primary: {{ palette.primary }};
+      --secondary: {{ palette.secondary }};
+      --accent: {{ palette.accent }};
+      --bg: #07080e;
+      --surface: rgba(255, 255, 255, 0.06);
+      --surface-strong: rgba(255, 255, 255, 0.1);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.12);
+      --radius: 18px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* -- Slide deck (JS-driven) ------------------------------------------- */
+    .deck {
+      position: fixed;
+      inset: 0;
+      display: none; /* revealed by JS if it can run */
+      z-index: 100;
+    }
+    .deck[data-active="true"] { display: block; }
+
+    .deck .bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at top left, color-mix(in srgb, var(--primary) 45%, transparent), transparent 55%),
+        radial-gradient(ellipse at bottom right, color-mix(in srgb, var(--accent) 35%, transparent), transparent 55%),
+        var(--bg);
+      transition: background 600ms ease;
+    }
+
+    .progress {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      gap: 6px;
+      z-index: 3;
+    }
+    .progress .seg {
+      flex: 1;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress .seg .fill {
+      height: 100%;
+      width: 0%;
+      background: #fff;
+      border-radius: inherit;
+      transition: width 120ms linear;
+    }
+    .progress .seg.done .fill { width: 100%; }
+    .progress .seg.active .fill { width: 0%; }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 6vh 6vw 10vh;
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+      transition: opacity 500ms ease, transform 500ms ease;
+    }
+    .slide[data-active="true"] {
+      display: flex;
+      opacity: 1;
+      transform: none;
+    }
+    .slide-inner {
+      max-width: 900px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.75rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--primary) 20%, transparent);
+      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+      margin-bottom: 1.5rem;
+    }
+
+    .big-emoji {
+      font-size: clamp(5rem, 14vw, 9rem);
+      line-height: 1;
+      margin-bottom: 1rem;
+      animation: pop 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes pop {
+      from { opacity: 0; transform: scale(0.6); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .slide h1 {
+      font-size: clamp(2.4rem, 6vw, 4.5rem);
+      margin: 0 0 1rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .slide h2 {
+      font-size: clamp(1.3rem, 3.5vw, 2rem);
+      margin: 0 0 1.5rem;
+      color: var(--text);
+    }
+    .slide p.lead {
+      font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+      color: var(--muted);
+      margin: 0 auto;
+      max-width: 620px;
+    }
+    .counter {
+      font-size: clamp(4rem, 14vw, 9rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-variant-numeric: tabular-nums;
+    }
+    .counter-label {
+      margin-top: 0.75rem;
+      font-size: 0.95rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+
+    .slide-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .mini-kpi {
+      padding: 1rem;
+      border-radius: var(--radius);
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .mini-kpi .v { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+    .mini-kpi .l { color: var(--muted); font-size: 0.8rem; margin-top: 0.35rem; letter-spacing: 0.06em; }
+
+    .slide-bars {
+      margin: 0 auto;
+      max-width: 600px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .slide-bars .row {
+      display: grid;
+      grid-template-columns: minmax(90px, 140px) 1fr minmax(40px, 60px);
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.95rem;
+    }
+    .slide-bars .label { color: var(--muted); }
+    .slide-bars .count { text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+    .slide-bars .track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .slide-bars .fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: inherit;
+      transform-origin: left center;
+      animation: grow 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    .heatmap {
+      margin: 1rem auto 0;
+      max-width: 100%;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+    .heatmap svg { display: block; max-width: 100%; height: auto; }
+
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 1.4rem;
+      z-index: 4;
+      transition: background 150ms ease, transform 150ms ease;
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.14); transform: translateY(-50%) scale(1.06); }
+    .nav-btn.prev { left: 20px; }
+    .nav-btn.next { right: 20px; }
+
+    .deck-controls {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.75rem;
+      z-index: 4;
+    }
+    .pill {
+      padding: 0.55rem 1rem;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      backdrop-filter: blur(4px);
+    }
+    .pill:hover { background: rgba(0, 0, 0, 0.55); }
+
+    .slide-share {
+      position: absolute;
+      top: 44px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.95rem;
+      cursor: pointer;
+      z-index: 4;
+      display: grid;
+      place-items: center;
+      transition: background 150ms ease, transform 150ms ease;
+    }
+    .slide-share:hover { background: rgba(255, 255, 255, 0.14); transform: scale(1.05); }
+    .slide-share[data-copied="true"] { background: var(--accent); color: #0b0b0b; }
+
+    .slide .hint {
+      position: absolute;
+      bottom: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* -- Scrollable summary (fallback / 'exit slides') --------------------- */
+    .report {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+      background:
+        radial-gradient(ellipse at top, color-mix(in srgb, var(--primary) 25%, transparent), transparent 55%),
+        var(--bg);
+    }
+    .report header.hero {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .badge {
+      display: inline-block;
+      background: color-mix(in srgb, var(--primary) 25%, transparent);
+      color: var(--accent);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+      margin-bottom: 1rem;
+    }
+    .report h1 {
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .subtitle { color: var(--muted); margin: 0; }
+    .archetype-card {
+      margin-top: 2rem;
+      padding: 1.5rem 2rem;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg,
+        color-mix(in srgb, var(--primary) 25%, transparent),
+        color-mix(in srgb, var(--secondary) 45%, transparent));
+      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    }
+    .archetype-card .emoji { font-size: 3rem; line-height: 1; }
+    .archetype-card h2 { margin: 0.5rem 0 0.25rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+    .archetype-card p { margin: 0; color: var(--muted); }
+
+    .section { margin-top: 3rem; }
+    .section h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      margin: 0 0 1rem;
+    }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+    .kpi .value { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 700; line-height: 1; }
+    .kpi .label { color: var(--muted); font-size: 0.85rem; margin-top: 0.4rem; }
+
+    .bars { display: flex; flex-direction: column; gap: 0.5rem; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(90px, 160px) 1fr minmax(40px, 60px);
+      gap: 0.75rem;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+    .bar-row .label { color: var(--muted); }
+    .bar-row .count { text-align: right; font-variant-numeric: tabular-nums; }
+    .bar-track { height: 10px; background: var(--surface); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: inherit; }
+
+    .weekday-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; text-align: center; }
+    .weekday-cell { padding: 0.75rem 0.5rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+    .weekday-cell .count { font-size: 1.2rem; font-weight: 600; color: var(--accent); }
+    .weekday-cell .name { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .stories { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+    .story { background: var(--surface-strong); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+    .story .emoji { font-size: 2rem; line-height: 1; }
+    .story h3 { margin: 0.4rem 0 0.2rem; font-size: 1.05rem; }
+    .story p { margin: 0; color: var(--muted); }
+
+    .share { margin-top: 3rem; padding: 1.5rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
+    .share pre {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .btn {
+      background: var(--primary);
+      color: #0b0b0b;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.05); }
+
+    footer { margin-top: 4rem; text-align: center; color: var(--muted); font-size: 0.8rem; }
+    footer a { color: var(--accent); }
+
+    @media (max-width: 640px) {
+      .nav-btn { width: 40px; height: 40px; font-size: 1.1rem; }
+      .nav-btn.prev { left: 10px; }
+      .nav-btn.next { right: 10px; }
+      .slide { padding: 8vh 5vw 11vh; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .slide, .big-emoji, .slide-bars .fill { transition: none; animation: none; }
+    }
+  </style>
+</head>
+
+<body>
+  {# ------------------- Slide deck ----------------------------------------- #}
+  {% set slide_list = [] %}
+  {% set _ = slide_list.append({"type": "intro"}) %}
+  {% if metrics.total_commits %}{% set _ = slide_list.append({"type": "total_commits"}) %}{% endif %}
+  {% if metrics.most_active_hour is not none %}{% set _ = slide_list.append({"type": "rhythm"}) %}{% endif %}
+  {% if metrics.longest_streak and metrics.longest_streak >= 3 %}{% set _ = slide_list.append({"type": "streak"}) %}{% endif %}
+  {% if metrics.weekday_distribution %}{% set _ = slide_list.append({"type": "weekdays"}) %}{% endif %}
+  {% if metrics.top_repos %}{% set _ = slide_list.append({"type": "repos"}) %}{% endif %}
+  {% if metrics.languages %}{% set _ = slide_list.append({"type": "languages"}) %}{% endif %}
+  {% if heatmap_svg %}{% set _ = slide_list.append({"type": "heatmap"}) %}{% endif %}
+  {% if archetype %}{% set _ = slide_list.append({"type": "archetype"}) %}{% endif %}
+  {% set _ = slide_list.append({"type": "outro"}) %}
+
+  <div class="deck" id="deck" data-active="false" aria-hidden="true">
+    <div class="bg"></div>
+
+    <div class="progress" id="deck-progress">
+      {% for _ in slide_list %}
+        <div class="seg"><div class="fill"></div></div>
+      {% endfor %}
+    </div>
+
+    <button class="nav-btn prev" id="deck-prev" aria-label="Previous slide">‹</button>
+    <button class="nav-btn next" id="deck-next" aria-label="Next slide">›</button>
+
+    {% for slide in slide_list %}
+      <section class="slide" data-index="{{ loop.index0 }}" data-slide-id="{{ slide.type }}" id="slide-{{ slide.type }}">
+        {% if not loop.first %}
+          <button class="slide-share" type="button" data-slide-share="{{ slide.type }}" aria-label="Copy link to this slide">🔗</button>
+        {% endif %}
+        <div class="slide-inner">
+          {% if slide.type == "intro" %}
+            <div class="eyebrow">DevWrapped · {{ provider }}</div>
+            <div class="big-emoji">🎁</div>
+            <h1>{{ year }} in Code</h1>
+            <p class="lead">Your year, wrapped. Swipe, tap, or press <strong>→</strong> to begin.</p>
+
+          {% elif slide.type == "total_commits" %}
+            <div class="eyebrow">Volume</div>
+            <div class="counter" data-counter="{{ metrics.total_commits }}">0</div>
+            <div class="counter-label">Commits this year</div>
+            <div class="slide-grid">
+              <div class="mini-kpi"><div class="v">{{ metrics.active_days }}</div><div class="l">Active days</div></div>
+              <div class="mini-kpi"><div class="v">{{ metrics.repo_count or 0 }}</div><div class="l">Repositories</div></div>
+              <div class="mini-kpi"><div class="v">{{ metrics.commits_per_active_day or 0 }}</div><div class="l">Avg / active day</div></div>
+            </div>
+
+          {% elif slide.type == "rhythm" %}
+            <div class="eyebrow">Rhythm</div>
+            <div class="big-emoji">
+              {%- if metrics.most_active_hour >= 22 or metrics.most_active_hour <= 5 -%}🌙
+              {%- elif metrics.most_active_hour <= 11 -%}☀️
+              {%- elif metrics.most_active_hour <= 17 -%}🌤️
+              {%- else -%}🌆
+              {%- endif -%}
+            </div>
+            <h1>{{ "%02d"|format(metrics.most_active_hour) }}:00</h1>
+            <p class="lead">Your peak coding hour. You showed up on {{ metrics.busiest_day_count or 0 }} commits on your busiest day ({{ metrics.busiest_day or "—" }}).</p>
+
+          {% elif slide.type == "streak" %}
+            <div class="eyebrow">Stamina</div>
+            <div class="big-emoji">🔥</div>
+            <div class="counter" data-counter="{{ metrics.longest_streak }}">0</div>
+            <div class="counter-label">Day longest streak</div>
+            <p class="lead" style="margin-top: 1.5rem;">Current run: {{ metrics.current_streak or 0 }} days.</p>
+
+          {% elif slide.type == "weekdays" %}
+            <div class="eyebrow">By day of week</div>
+            <h2>When you ship</h2>
+            {% set wd_max = metrics.weekday_distribution | max_value %}
+            <div class="slide-bars">
+              {% for day, count in metrics.weekday_distribution.items() %}
+                <div class="row">
+                  <div class="label">{{ day }}</div>
+                  <div class="track"><div class="fill" style="width: {{ count | normalize_bar(wd_max) }}%"></div></div>
+                  <div class="count">{{ count }}</div>
+                </div>
+              {% endfor %}
+            </div>
+
+          {% elif slide.type == "repos" %}
+            <div class="eyebrow">Focus</div>
+            <h2>Where your commits lived</h2>
+            {% set repo_max = metrics.top_repos | max_value %}
+            <div class="slide-bars">
+              {% for repo, count in metrics.top_repos.items() %}
+                <div class="row">
+                  <div class="label">{{ repo }}</div>
+                  <div class="track"><div class="fill" style="width: {{ count | normalize_bar(repo_max) }}%"></div></div>
+                  <div class="count">{{ count }}</div>
+                </div>
+              {% endfor %}
+            </div>
+
+          {% elif slide.type == "languages" %}
+            <div class="eyebrow">Stack</div>
+            <h2>Your year spoke in</h2>
+            {% set lang_max = metrics.languages | max_value %}
+            <div class="slide-bars">
+              {% for lang, size in metrics.languages.items() %}
+                <div class="row">
+                  <div class="label">{{ lang }}</div>
+                  <div class="track"><div class="fill" style="width: {{ size | normalize_bar(lang_max) }}%"></div></div>
+                  <div class="count">{{ size }}</div>
+                </div>
+              {% endfor %}
+            </div>
+
+          {% elif slide.type == "heatmap" %}
+            <div class="eyebrow">Every day of the year</div>
+            <h2>Your {{ year }} heatmap</h2>
+            <div class="heatmap">{{ heatmap_svg | safe }}</div>
+
+          {% elif slide.type == "archetype" %}
+            <div class="eyebrow">Your archetype</div>
+            <div class="big-emoji">{{ archetype.emoji }}</div>
+            <h1>{{ archetype.name }}</h1>
+            <p class="lead">{{ archetype.description }}</p>
+
+          {% elif slide.type == "outro" %}
+            <div class="eyebrow">That's a wrap</div>
+            <div class="big-emoji">✨</div>
+            <h1>See you in {{ year + 1 }}</h1>
+            <p class="lead">Tap below to explore the full report, or share your {{ year }}.</p>
+            <div style="margin-top: 2rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+              <button class="btn" id="deck-exit">Show full report</button>
+              {% if share_text and share_url %}
+                <button class="btn" id="deck-share" style="background: var(--accent);">Copy share text</button>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+        {% if loop.first %}
+          <div class="hint">Press → or tap Next</div>
+        {% endif %}
+      </section>
+    {% endfor %}
+
+    <div class="deck-controls">
+      <button class="pill" id="deck-autoplay" title="Auto-advance"><span id="deck-autoplay-icon">▶</span><span>Autoplay</span></button>
+      <button class="pill" id="deck-skip">Skip to summary</button>
+    </div>
+  </div>
+
+  {# ------------------- Scroll summary ------------------------------------- #}
+  <div class="report" id="report">
+    <header class="hero">
+      <span class="badge">DevWrapped · {{ provider }}</span>
+      <h1>{{ year }} in Code</h1>
+      <p class="subtitle">Generated {{ generated_at }}</p>
+
+      <div style="margin-top: 1.25rem;">
+        <button class="btn" id="open-deck">▶ Play the slides</button>
+      </div>
+
+      {% if archetype %}
+        <div class="archetype-card">
+          <div class="emoji">{{ archetype.emoji }}</div>
+          <h2>{{ archetype.name }}</h2>
+          <p>{{ archetype.description }}</p>
+        </div>
+      {% endif %}
+    </header>
+
+    <section class="section">
+      <h2>At a glance</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="value">{{ metrics.total_commits }}</div><div class="label">Total commits</div></div>
+        <div class="kpi"><div class="value">{{ metrics.active_days }}</div><div class="label">Active days</div></div>
+        <div class="kpi"><div class="value">{{ metrics.longest_streak or 0 }}</div><div class="label">Longest streak</div></div>
+        <div class="kpi"><div class="value">{% if metrics.most_active_hour is not none %}{{ "%02d"|format(metrics.most_active_hour) }}:00{% else %}—{% endif %}</div><div class="label">Peak hour</div></div>
+        <div class="kpi"><div class="value">{{ metrics.repo_count or 0 }}</div><div class="label">Repositories</div></div>
+        <div class="kpi"><div class="value">{{ metrics.total_pull_requests or 0 }}</div><div class="label">Pull requests</div></div>
+        <div class="kpi"><div class="value">{{ metrics.total_reviews or 0 }}</div><div class="label">Reviews given</div></div>
+        <div class="kpi"><div class="value">{{ metrics.busiest_day or "—" }}</div><div class="label">Busiest day{% if metrics.busiest_day_count %} · {{ metrics.busiest_day_count }} commits{% endif %}</div></div>
+      </div>
+    </section>
+
+    {% if heatmap_svg %}
+      <section class="section">
+        <h2>Contributions</h2>
+        <div class="heatmap">{{ heatmap_svg | safe }}</div>
+      </section>
+    {% endif %}
+
+    {% if metrics.commits_per_month %}
+      {% set month_max = metrics.commits_per_month | max_value %}
+      <section class="section">
+        <h2>Commits per month</h2>
+        <div class="bars">
+          {% for month, count in metrics.commits_per_month.items() %}
+            <div class="bar-row">
+              <div class="label">{{ month }}</div>
+              <div class="bar-track"><div class="bar-fill" style="width: {{ count | normalize_bar(month_max) }}%"></div></div>
+              <div class="count">{{ count }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if metrics.top_repos %}
+      {% set repo_max = metrics.top_repos | max_value %}
+      <section class="section">
+        <h2>Top repositories</h2>
+        <div class="bars">
+          {% for repo, count in metrics.top_repos.items() %}
+            <div class="bar-row">
+              <div class="label">{{ repo }}</div>
+              <div class="bar-track"><div class="bar-fill" style="width: {{ count | normalize_bar(repo_max) }}%"></div></div>
+              <div class="count">{{ count }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if metrics.weekday_distribution %}
+      <section class="section">
+        <h2>By day of week</h2>
+        <div class="weekday-grid">
+          {% for day, count in metrics.weekday_distribution.items() %}
+            <div class="weekday-cell"><div class="count">{{ count }}</div><div class="name">{{ day }}</div></div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if metrics.languages %}
+      {% set lang_max = metrics.languages | max_value %}
+      <section class="section">
+        <h2>Languages</h2>
+        <div class="bars">
+          {% for lang, size in metrics.languages.items() %}
+            <div class="bar-row">
+              <div class="label">{{ lang }}</div>
+              <div class="bar-track"><div class="bar-fill" style="width: {{ size | normalize_bar(lang_max) }}%"></div></div>
+              <div class="count">{{ size }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if stories %}
+      <section class="section">
+        <h2>Your year in stories</h2>
+        <div class="stories">
+          {% for story in stories %}
+            <div class="story">
+              <div class="emoji">{{ story.emoji }}</div>
+              <h3>{{ story.title }}</h3>
+              <p>{{ story.text }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if share_text and share_url %}
+      <section class="share">
+        <h2 style="margin-top: 0;">Share your DevWrapped</h2>
+        <pre id="share-payload">{{ share_text }}
+{{ share_url }}</pre>
+        <button class="btn" id="copy-share">Copy</button>
+      </section>
+    {% endif %}
+
+    <footer>
+      Made with <a href="https://github.com/Maniac198/devwrapped">DevWrapped</a>
+      · Privacy-first, metadata-only.
+      {% if cache_hits %}<br /><span style="opacity: 0.7;">{{ cache_hits }} response(s) served from cache.</span>{% endif %}
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const deck = document.getElementById("deck");
+      const slides = deck ? Array.from(deck.querySelectorAll(".slide")) : [];
+      const segs = deck ? Array.from(deck.querySelectorAll(".progress .seg")) : [];
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const slideDuration = prefersReducedMotion ? 5000 : 3500;
+
+      if (!deck || slides.length < 2) return;
+
+      let index = 0;
+      let autoplay = false;
+      let autoplayTimer = null;
+      let progressTimer = null;
+
+      function animateCounter(el) {
+        const target = parseInt(el.getAttribute("data-counter") || "0", 10);
+        if (!target || prefersReducedMotion) { el.textContent = target.toLocaleString(); return; }
+        const duration = 1100;
+        const start = performance.now();
+        function tick(now) {
+          const t = Math.min(1, (now - start) / duration);
+          const eased = 1 - Math.pow(1 - t, 3);
+          el.textContent = Math.round(target * eased).toLocaleString();
+          if (t < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      function slideIndexById(id) {
+        for (let i = 0; i < slides.length; i++) {
+          if (slides[i].getAttribute("data-slide-id") === id) return i;
+        }
+        return -1;
+      }
+
+      function show(i, opts) {
+        opts = opts || {};
+        if (i < 0 || i >= slides.length) return;
+        slides.forEach((s, idx) => s.setAttribute("data-active", String(idx === i)));
+        segs.forEach((seg, idx) => {
+          seg.classList.toggle("done", idx < i);
+          seg.classList.toggle("active", idx === i);
+          const fill = seg.querySelector(".fill");
+          if (idx < i) fill.style.width = "100%";
+          else if (idx > i) fill.style.width = "0%";
+          else fill.style.width = "0%";
+        });
+        index = i;
+
+        const active = slides[i];
+        active.querySelectorAll("[data-counter]").forEach(animateCounter);
+
+        const slideId = active.getAttribute("data-slide-id");
+        if (slideId && history && history.replaceState) {
+          try { history.replaceState(null, "", "#slide-" + slideId); } catch (e) { /* ignore */ }
+        }
+
+        if (progressTimer) { cancelAnimationFrame(progressTimer); progressTimer = null; }
+        if (autoplayTimer) { clearTimeout(autoplayTimer); autoplayTimer = null; }
+
+        if (autoplay) {
+          const fill = segs[i] && segs[i].querySelector(".fill");
+          if (fill) {
+            const start = performance.now();
+            function step(now) {
+              const t = Math.min(1, (now - start) / slideDuration);
+              fill.style.width = (t * 100) + "%";
+              if (t < 1 && autoplay) progressTimer = requestAnimationFrame(step);
+            }
+            progressTimer = requestAnimationFrame(step);
+          }
+          autoplayTimer = setTimeout(() => {
+            if (!autoplay) return;
+            if (i + 1 >= slides.length) { stopAutoplay(); return; }
+            show(i + 1);
+          }, slideDuration);
+        }
+      }
+
+      function next() { show(Math.min(slides.length - 1, index + 1)); }
+      function prev() { show(Math.max(0, index - 1)); }
+
+      function enterDeck(startId) {
+        deck.setAttribute("data-active", "true");
+        document.body.style.overflow = "hidden";
+        let startIndex = 0;
+        if (startId) {
+          const resolved = slideIndexById(startId);
+          if (resolved >= 0) startIndex = resolved;
+        }
+        show(startIndex);
+      }
+      function exitDeck() {
+        stopAutoplay();
+        deck.setAttribute("data-active", "false");
+        document.body.style.overflow = "";
+        const report = document.getElementById("report");
+        if (report) report.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      function startAutoplay() {
+        autoplay = true;
+        const icon = document.getElementById("deck-autoplay-icon");
+        if (icon) icon.textContent = "⏸";
+        show(index);
+      }
+      function stopAutoplay() {
+        autoplay = false;
+        if (autoplayTimer) { clearTimeout(autoplayTimer); autoplayTimer = null; }
+        if (progressTimer) { cancelAnimationFrame(progressTimer); progressTimer = null; }
+        const icon = document.getElementById("deck-autoplay-icon");
+        if (icon) icon.textContent = "▶";
+      }
+
+      document.getElementById("deck-next").addEventListener("click", () => { stopAutoplay(); next(); });
+      document.getElementById("deck-prev").addEventListener("click", () => { stopAutoplay(); prev(); });
+      document.getElementById("deck-skip").addEventListener("click", exitDeck);
+      document.getElementById("deck-exit") && document.getElementById("deck-exit").addEventListener("click", exitDeck);
+      document.getElementById("deck-autoplay").addEventListener("click", () => {
+        if (autoplay) stopAutoplay(); else startAutoplay();
+      });
+      const openBtn = document.getElementById("open-deck");
+      if (openBtn) openBtn.addEventListener("click", enterDeck);
+
+      document.addEventListener("keydown", (e) => {
+        if (deck.getAttribute("data-active") !== "true") return;
+        if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); stopAutoplay(); next(); }
+        else if (e.key === "ArrowLeft") { e.preventDefault(); stopAutoplay(); prev(); }
+        else if (e.key === "Escape") exitDeck();
+      });
+
+      // Touch swipe.
+      let touchStartX = null;
+      deck.addEventListener("touchstart", (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+      deck.addEventListener("touchend", (e) => {
+        if (touchStartX === null) return;
+        const dx = (e.changedTouches[0].clientX - touchStartX);
+        if (Math.abs(dx) > 50) { stopAutoplay(); dx < 0 ? next() : prev(); }
+        touchStartX = null;
+      });
+
+      // Click on empty area to advance.
+      deck.addEventListener("click", (e) => {
+        if (e.target.closest(".nav-btn") || e.target.closest(".pill") || e.target.closest(".btn") || e.target.closest(".slide-share")) return;
+        if (e.target.closest(".slide-inner")) return;
+        stopAutoplay(); next();
+      });
+
+      // Per-slide "copy link" button.
+      deck.querySelectorAll(".slide-share").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("data-slide-share");
+          if (!id) return;
+          const base = window.location.href.split("#")[0];
+          const url = base + "#slide-" + id;
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => {
+              btn.setAttribute("data-copied", "true");
+              btn.textContent = "✓";
+              setTimeout(() => {
+                btn.removeAttribute("data-copied");
+                btn.textContent = "🔗";
+              }, 1200);
+            });
+          }
+        });
+      });
+
+      // Share button inside outro.
+      const shareBtn = document.getElementById("deck-share");
+      if (shareBtn) shareBtn.addEventListener("click", copyShare);
+      const copyShareBtn = document.getElementById("copy-share");
+      if (copyShareBtn) copyShareBtn.addEventListener("click", copyShare);
+
+      function copyShare() {
+        const el = document.getElementById("share-payload");
+        if (!el) return;
+        navigator.clipboard && navigator.clipboard.writeText(el.innerText).then(() => {
+          const buttons = [document.getElementById("deck-share"), document.getElementById("copy-share")].filter(Boolean);
+          buttons.forEach((btn) => {
+            const original = btn.textContent;
+            btn.textContent = "Copied ✓";
+            setTimeout(() => { btn.textContent = original; }, 1500);
+          });
+        });
+      }
+
+      // Deep link — if URL has #slide-<id> we enter the deck at that slide.
+      const hash = (window.location.hash || "").replace(/^#/, "");
+      if (hash.startsWith("slide-")) {
+        const wantedId = hash.slice("slide-".length);
+        setTimeout(() => enterDeck(wantedId), 80);
+      } else if (!window.location.hash) {
+        // Auto-open deck on first load so users see the motion immediately.
+        setTimeout(() => enterDeck(), 150);
+      }
+
+      // React to back/forward nav between deep-linked slides.
+      window.addEventListener("hashchange", () => {
+        const current = (window.location.hash || "").replace(/^#/, "");
+        if (current.startsWith("slide-") && deck.getAttribute("data-active") === "true") {
+          const id = current.slice("slide-".length);
+          const resolved = slideIndexById(id);
+          if (resolved >= 0) show(resolved);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

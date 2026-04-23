@@ -46,12 +46,15 @@ htmlcov/
 Thumbs.db
 
 # --------------------------------------------------
-# DevWrapped Outputs (Generated)
+# DevWrapped Outputs (Generated at repo root only —
+# the packaged template lives at devwrapped/templates/wrapped.html
+# and must NOT be ignored.)
 # --------------------------------------------------
-wrapped.html
-wrapped.json
-public/
-site/
+/wrapped.html
+/wrapped.json
+/wrapped-og.png
+/public/
+/site/
 
 # --------------------------------------------------
 # GitHub Pages artifacts

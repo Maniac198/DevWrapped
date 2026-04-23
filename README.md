@@ -18,9 +18,19 @@ devwrapped generate --year 2024
 
 - **Animated story deck** — Spotify-style full-screen slides with keyboard
   (← →, space, esc), swipe, autoplay, per-slide progress bar, and per-archetype
-  theme. Graceful scroll fallback for users who disable JS.
+  theme. **Deep-linkable slides** via `#slide-<id>` — every slide has a 🔗
+  button that copies a stable URL anchored to that slide. Graceful scroll
+  fallback for users who disable JS.
+- **OG share card** — a 1200×630 PNG is rendered per run (requires the
+  `[share]` extras for Pillow) and advertised via `og:image` + Twitter Card
+  meta tags so link unfurls look great on X, LinkedIn, Slack, and Discord.
+- **Year-over-year deltas** — pass `--compare previous.json` (or drop a
+  `wrapped-<year-1>.json` alongside) and DevWrapped generates a "How you
+  changed" story card with percentage deltas, archetype changes, and new
+  languages. `devwrapped diff a.json b.json` prints the same comparison as
+  a terminal table.
 - **Contribution heatmap** — inline SVG GitHub-style grid coloured with the
-  archetype palette, with tooltips for every day.
+  archetype palette, with weekday + date + count in every tooltip.
 - **Privacy-first** — metadata only (timestamps, repo names, SHAs). No commit
   content, no diffs, no PII. Actor names can be pseudonymized with a one-way
   hash via `--pseudonymize`. Every page ships a strict CSP and
@@ -48,7 +58,9 @@ devwrapped generate --year 2024
 ## Install
 
 ```bash
-pip install -e ".[dev]"
+pip install -e .                  # core
+pip install -e ".[share]"         # + PNG share card
+pip install -e ".[dev]"           # + dev tooling (tests, lint, type-check)
 ```
 
 Requires Python 3.10+.
@@ -81,11 +93,18 @@ devwrapped generate
   --languages / --no-languages     # language byte totals (default: on)
   --pseudonymize                   # hash actor names in JSON output
 
+  --compare <wrapped.json>         # year-over-year delta vs this file
+  --og / --no-og                   # PNG share card (default: on)
+
   --cache / --no-cache             # ETag disk cache (default: on)
   --cache-dir <path>               # override cache directory
   --log-level DEBUG|INFO|...
   --log-json                       # emit structured JSON logs to stderr
 ```
+
+If `--compare` is not specified, DevWrapped auto-detects a previous year from
+`./wrapped-<year-1>.json`, `./<year-1>.json`, or
+`./public/<year-1>/wrapped.json`.
 
 ### `devwrapped render`
 
@@ -93,6 +112,18 @@ Re-render HTML from a previously generated JSON (no network):
 
 ```bash
 devwrapped render wrapped.json --output wrapped.html
+```
+
+### `devwrapped diff`
+
+Compare two years and print a table:
+
+```bash
+devwrapped diff public/2023/wrapped.json public/2024/wrapped.json
+#            2023  →  2024
+#   Metric     2023    2024   Δ
+#   Commits     120     180   +60  (+50.0%)
+#   ...
 ```
 
 ### `devwrapped build-index`
@@ -157,6 +188,7 @@ Every run publishes:
 
 - `public/<year>/index.html` — the slide deck + summary for that year.
 - `public/<year>/wrapped.json` — the full payload for programmatic use.
+- `public/<year>/og.png` — the Open Graph share card (needs `[share]` extras).
 - `public/index.html` — a landing page auto-generated from every year folder.
 - `wrapped.json` and `wrapped.html` as workflow artifacts.
 
@@ -243,7 +275,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-pytest              # 63 tests
+pytest              # 83 tests, 80% coverage gate
 ruff check .        # lint
 mypy                # type-check
 pre-commit install  # enable local hooks

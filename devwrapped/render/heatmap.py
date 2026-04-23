@@ -19,6 +19,7 @@ _WEEK = 7
 _LEFT_PAD = 28
 _TOP_PAD = 18
 _MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
 def render_heatmap(
@@ -88,7 +89,10 @@ def render_heatmap(
             fill = _bucket_color(count, max_count, primary=primary, accent=accent, background=background)
             x = _LEFT_PAD + w * (_CELL + _GAP)
             y = _TOP_PAD + dow * (_CELL + _GAP)
-            tooltip = f"{day.isoformat()}: {count} commit{'s' if count != 1 else ''}"
+            tooltip = (
+                f"{_WEEKDAY_LABELS[day.weekday()]} · {day.isoformat()} · "
+                f"{count} commit{'s' if count != 1 else ''}"
+            )
             parts.append(
                 f'<rect x="{x}" y="{y}" width="{_CELL}" height="{_CELL}" '
                 f'rx="2" ry="2" fill="{fill}" stroke="{border}" stroke-width="0.5">'

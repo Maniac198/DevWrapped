@@ -16,7 +16,11 @@ def test_render_heatmap_produces_svg_with_cells():
     assert svg.startswith("<svg")
     assert svg.endswith("</svg>")
     assert 'role="img"' in svg
-    assert "2024-06-15: 10 commits" in svg
+    # Tooltip now includes weekday + ISO date + count.
+    assert "2024-06-15" in svg
+    assert "10 commits" in svg
+    # 2024-06-15 was a Saturday.
+    assert "Sat · 2024-06-15 · 10 commits" in svg
     assert "Jan" in svg and "Dec" in svg
 
 

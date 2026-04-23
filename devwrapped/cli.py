@@ -11,10 +11,12 @@ from pathlib import Path
 import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
 
 from devwrapped import __version__
 from devwrapped.archetypes.engine import ArchetypeEngine
 from devwrapped.cache import ResponseCache, default_cache_dir
+from devwrapped.compare import compute_yoy, load_payload
 from devwrapped.exit_codes import ExitCode
 from devwrapped.logging_utils import configure_logging, log_event, new_correlation_id
 from devwrapped.metrics.engine import MetricsEngine
@@ -25,6 +27,7 @@ from devwrapped.render.heatmap import render_heatmap
 from devwrapped.render.html import HTMLRenderer
 from devwrapped.render.index import build_index
 from devwrapped.render.json import JSONRenderer
+from devwrapped.render.og_card import render_og_card
 from devwrapped.stories.engine import StoryEngine
 
 app = typer.Typer(
@@ -51,6 +54,8 @@ def generate(
     include_reviews: bool = typer.Option(True, "--reviews/--no-reviews", help="Include pull request reviews the user submitted."),
     include_languages: bool = typer.Option(True, "--languages/--no-languages", help="Include per-language byte totals."),
     pseudonymize: bool = typer.Option(False, "--pseudonymize", help="Hash actor names in the JSON output."),
+    compare: str | None = typer.Option(None, "--compare", help="Path to a prior wrapped.json for year-over-year delta."),
+    og_card: bool = typer.Option(True, "--og/--no-og", help="Generate an og:image PNG share card (requires Pillow)."),
     cache_enabled: bool = typer.Option(True, "--cache/--no-cache", help="Use on-disk ETag cache under $XDG_CACHE_HOME/devwrapped."),
     cache_dir: str | None = typer.Option(None, "--cache-dir", help="Override cache directory."),
     log_level: str = typer.Option("INFO", "--log-level", help="Log level (DEBUG, INFO, WARNING, ERROR)."),
@@ -114,7 +119,7 @@ def generate(
 
     console.print(f"📦 Found [bold]{len(repos)}[/bold] active repositor{'y' if len(repos) == 1 else 'ies'}")
 
-    all_events = []
+    all_events: list = []
     languages_total: dict[str, int] = {}
 
     with Progress(
@@ -160,8 +165,33 @@ def generate(
     console.print(f"📊 Collected [bold]{len(all_events)}[/bold] events")
 
     metrics = MetricsEngine(all_events, languages=languages_total).compute()
+
+    # Resolve YoY comparison (explicit --compare wins; otherwise auto-detect).
+    comparison_payload = None
+    if compare:
+        comparison_payload = load_payload(compare)
+        if comparison_payload is None:
+            console.print(f"[yellow]Could not load --compare file: {compare}[/yellow]")
+    else:
+        comparison_payload = _auto_detect_previous(year=year, output_path=output_path)
+
+    current_payload_preview = {
+        "year": year,
+        "metrics": metrics,
+    }
+    yoy = compute_yoy(comparison_payload, current_payload_preview)
+    if yoy:
+        metrics["yoy"] = yoy
+
     stories = StoryEngine(metrics).generate()
     archetype = ArchetypeEngine(metrics).classify()
+
+    # Re-apply YoY archetype delta using the resolved archetype.
+    if yoy and comparison_payload:
+        yoy["archetype_changed"] = _refresh_archetype_change(
+            previous=comparison_payload.get("archetype"), current=archetype
+        )
+
     heatmap_svg = render_heatmap(
         commits_per_day=metrics.get("commits_per_day"),
         year=year,
@@ -171,12 +201,32 @@ def generate(
 
     console.print(f"🎭 Archetype: [bold]{archetype['emoji']} {archetype['name']}[/bold]")
 
+    cache_hits = getattr(client, "cache_hits", 0)
+    if cache_hits:
+        console.print(f"💾 Cache: [green]{cache_hits}[/green] response(s) served from cache")
+
     share_url = os.getenv("DEVWRAPPED_SHARE_URL")
     share_text = None
     if share_url:
         share_text = (
             f"I'm an {archetype['emoji']} {archetype['name']} — here's my DevWrapped {year}"
         )
+
+    og_image_rel: str | None = None
+    if output_path.suffix == ".html" and og_card:
+        card_path = output_path.with_name(
+            output_path.stem + "-og.png" if output_path.stem != "wrapped" else "wrapped-og.png"
+        )
+        result = render_og_card(
+            card_path,
+            year=year,
+            archetype=archetype,
+            metrics=metrics,
+            owner=owner,
+        )
+        if result:
+            og_image_rel = result.name
+            console.print(f"🖼️  Share card → [bold]{result}[/bold]")
 
     if output_path.suffix == ".json":
         JSONRenderer(output_path).render(
@@ -200,6 +250,8 @@ def generate(
             year=year,
             provider=provider,
             heatmap_svg=heatmap_svg,
+            og_image=og_image_rel,
+            cache_hits=cache_hits,
         )
 
     log_event(
@@ -210,6 +262,7 @@ def generate(
         events=len(all_events),
         archetype=archetype["id"],
         output=str(output_path),
+        cache_hits=cache_hits,
     )
     console.print(f"[bold green]✅ Done[/bold green] — wrote {output_path}")
 
@@ -218,6 +271,7 @@ def generate(
 def render(
     input_path: str = typer.Argument(..., metavar="INPUT", help="Path to a wrapped.json file to re-render."),
     output: str = typer.Option("wrapped.html", "--output", help="HTML output path."),
+    og_card: bool = typer.Option(True, "--og/--no-og", help="Regenerate the og:image PNG share card (requires Pillow)."),
 ) -> None:
     """Re-render an HTML report from a previously generated wrapped.json (offline)."""
     input_file = Path(input_path)
@@ -244,7 +298,20 @@ def render(
         accent=(archetype or {}).get("palette", {}).get("accent", "#bbf7d0"),
     )
 
-    HTMLRenderer(output).render(
+    output_path = Path(output)
+    og_image_rel: str | None = None
+    if og_card:
+        card_path = output_path.with_name(
+            output_path.stem + "-og.png" if output_path.stem != "wrapped" else "wrapped-og.png"
+        )
+        result = render_og_card(
+            card_path, year=year, archetype=archetype, metrics=metrics, owner=None
+        )
+        if result:
+            og_image_rel = result.name
+            console.print(f"🖼️  Share card → [bold]{result}[/bold]")
+
+    HTMLRenderer(output_path).render(
         metrics=metrics,
         stories=stories,
         archetype=archetype,
@@ -253,8 +320,61 @@ def render(
         year=year,
         provider=provider,
         heatmap_svg=heatmap_svg,
+        og_image=og_image_rel,
     )
-    console.print(f"[bold green]✅ Rendered[/bold green] → {output}")
+    console.print(f"[bold green]✅ Rendered[/bold green] → {output_path}")
+
+
+@app.command()
+def diff(
+    old: str = typer.Argument(..., metavar="OLD", help="Previous wrapped.json."),
+    new: str = typer.Argument(..., metavar="NEW", help="Current wrapped.json."),
+) -> None:
+    """Print a side-by-side comparison between two wrapped.json files."""
+    previous = load_payload(old)
+    current = load_payload(new)
+    if previous is None or current is None:
+        console.print("[red]Could not load one or both input files.[/red]")
+        raise typer.Exit(code=ExitCode.USAGE_ERROR)
+
+    yoy = compute_yoy(previous, current)
+    if not yoy:
+        console.print("[yellow]Nothing to compare.[/yellow]")
+        return
+
+    table = Table(title=f"{yoy['previous_year']}  →  {yoy['current_year']}")
+    table.add_column("Metric", style="cyan", no_wrap=True)
+    table.add_column(str(yoy["previous_year"]), justify="right")
+    table.add_column(str(yoy["current_year"]), justify="right")
+    table.add_column("Δ", justify="right")
+
+    for key, label in (
+        ("total_commits", "Commits"),
+        ("active_days", "Active days"),
+        ("longest_streak", "Longest streak"),
+        ("repo_count", "Repositories"),
+        ("total_pull_requests", "Pull requests"),
+        ("total_reviews", "Reviews"),
+    ):
+        d = yoy.get(key) or {}
+        pct = d.get("pct")
+        diff_repr = f"{d.get('diff', 0):+}"
+        if pct is not None:
+            diff_repr += f"  ({pct:+.1f}%)"
+        table.add_row(label, str(d.get("previous", "—")), str(d.get("current", "—")), diff_repr)
+
+    archetype = yoy.get("archetype_changed") or {}
+    if archetype.get("changed"):
+        table.add_row(
+            "Archetype",
+            archetype.get("from_name") or "—",
+            archetype.get("to_name") or "—",
+            "changed",
+        )
+    new_langs = yoy.get("new_languages") or []
+    if new_langs:
+        table.add_row("New languages", "—", ", ".join(new_langs), "")
+    console.print(table)
 
 
 @app.command("build-index")
@@ -292,6 +412,42 @@ def version() -> None:
 def _default(ctx: typer.Context) -> None:
     if ctx.invoked_subcommand is None:
         ctx.invoke(generate)
+
+
+# ---- helpers ---------------------------------------------------------------
+
+
+def _auto_detect_previous(*, year: int, output_path: Path) -> dict | None:
+    """Look for ``wrapped.json`` from the prior year in conventional locations."""
+    prev = year - 1
+    candidates = [
+        output_path.parent / f"wrapped-{prev}.json",
+        output_path.parent / f"{prev}.json",
+        output_path.parent / "public" / str(prev) / "wrapped.json",
+        Path.cwd() / f"wrapped-{prev}.json",
+        Path.cwd() / "public" / str(prev) / "wrapped.json",
+    ]
+    for c in candidates:
+        payload = load_payload(c)
+        if payload:
+            log_event(log, logging.INFO, "yoy.previous_found", path=str(c), year=prev)
+            return payload
+    return None
+
+
+def _refresh_archetype_change(*, previous: dict | None, current: dict | None) -> dict:
+    prev_id = (previous or {}).get("id")
+    curr_id = (current or {}).get("id")
+    if prev_id == curr_id:
+        return {"changed": False, "from": prev_id, "to": curr_id, "name": (current or {}).get("name")}
+    return {
+        "changed": True,
+        "from": prev_id,
+        "to": curr_id,
+        "from_name": (previous or {}).get("name"),
+        "to_name": (current or {}).get("name"),
+        "emoji": (current or {}).get("emoji"),
+    }
 
 
 def _spinner(message: str):

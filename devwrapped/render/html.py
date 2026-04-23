@@ -35,6 +35,8 @@ class HTMLRenderer:
         year: int,
         provider: str,
         heatmap_svg: str | None = None,
+        og_image: str | None = None,
+        cache_hits: int = 0,
     ) -> None:
         template = self.env.get_template("wrapped.html")
         html = template.render(
@@ -46,6 +48,8 @@ class HTMLRenderer:
             share_text=share_text,
             share_url=share_url,
             heatmap_svg=heatmap_svg,
+            og_image=og_image,
+            cache_hits=cache_hits,
             generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         )
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
