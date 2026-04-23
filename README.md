@@ -193,8 +193,47 @@ jobs:
 
 ### Triggering a run
 
-- Manually: **Actions → DevWrapped → Run workflow** (with optional year/owner inputs).
+- Manually: **Actions → DevWrapped → Run workflow**. Inputs:
+  - `year` — one year (default: last year).
+  - `years` — multiple years in one run, comma-separated (e.g. `2022,2023,2024`).
+    Takes precedence over `year`.
+  - `owner`, `is-org` — override the owner being wrapped.
+  - `preserve-existing` — whether to preserve previously-published years
+    (default `true`; set to `false` to wipe and start fresh).
 - Automatically: the workflow is scheduled for `00:15 UTC on January 1st` each year.
+
+### How preservation works
+
+`actions/deploy-pages@v4` publishes whatever `./public/` contains at the time
+of upload — there is **no automatic merge** with what's currently live. To
+avoid wiping older years, the build job now hydrates `./public/` from the
+current live site first:
+
+1. Fetch `https://<owner>.github.io/<repo>/years.json`.
+2. For each year listed, download `<year>/index.html`, `<year>/wrapped.json`,
+   and `<year>/og.png` into `./public/<year>/`.
+3. Run `devwrapped generate` for each requested year, overwriting any same-year
+   content under `./public/<year>/`.
+4. Run `devwrapped build-index` to refresh the landing page and `years.json`.
+5. Upload `./public/` as the Pages artifact and deploy.
+
+On the first run there is nothing to hydrate (404 on `years.json`), and the
+site is built fresh. On every subsequent run, existing years survive.
+
+### Backfilling years
+
+If you want to add a year that's missing, trigger the workflow manually with:
+
+```
+years = 2024
+preserve-existing = true
+```
+
+(Or pass multiple: `years = 2022,2023,2024`.) The job will:
+
+- Download 2025 (or whatever's currently live) into `./public/2025/`.
+- Generate fresh reports for the years you asked for.
+- Publish the union of both.
 
 ### What ends up on Pages
 

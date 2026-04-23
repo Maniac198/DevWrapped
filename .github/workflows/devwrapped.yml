@@ -4,7 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       year:
-        description: "Year (defaults to last year)"
+        description: "Single year (ignored if 'years' is set). Defaults to last year."
+        required: false
+        default: ""
+      years:
+        description: "Comma-separated years to publish in one run (e.g. '2022,2023,2024'). Prior years on Pages are preserved automatically."
         required: false
         default: ""
       owner:
@@ -15,13 +19,13 @@ on:
         description: "Set to 'true' if the owner is an org"
         required: false
         default: "false"
+      preserve-existing:
+        description: "Hydrate ./public from the live Pages site before staging new years. Set to 'false' to wipe and restart."
+        required: false
+        default: "true"
   schedule:
     # First day of every year, 00:15 UTC.
     - cron: "15 0 1 1 *"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/devwrapped.yml"
 
 # Don't pile up concurrent Pages deploys; only the latest one matters.
 concurrency:
@@ -32,9 +36,6 @@ jobs:
   build:
     name: Build DevWrapped report
     runs-on: ubuntu-latest
-    # Tokens we need:
-    #   contents: read  - to checkout
-    # Everything else (Pages upload/deploy) runs in the deploy job.
     permissions:
       contents: read
     steps:
@@ -49,18 +50,18 @@ jobs:
         uses: ./.github/actions/devwrapped
         with:
           year: ${{ github.event.inputs.year }}
+          years: ${{ github.event.inputs.years }}
           owner: ${{ github.event.inputs.owner }}
           is-org: ${{ github.event.inputs.is-org || 'false' }}
           output: both
           prepare-pages: "true"
+          preserve-existing: ${{ github.event.inputs.preserve-existing || 'true' }}
           upload-pages-artifact: "true"
 
   deploy:
     name: Deploy to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
-    # First-party Pages deploy requires these two permissions and the
-    # 'github-pages' environment (auto-created by GitHub).
     permissions:
       pages: write
       id-token: write

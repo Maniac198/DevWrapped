@@ -3,7 +3,11 @@ description: "Generate Spotify-Wrapped-style year-end developer stats and stage 
 
 inputs:
   year:
-    description: "Year to generate Wrapped for (defaults to last year)."
+    description: "Single year to generate (defaults to last year). Ignored when `years` is set."
+    required: false
+    default: ""
+  years:
+    description: "Comma-separated list of years to generate in one run (e.g. '2022,2023,2024')."
     required: false
     default: ""
   owner:
@@ -15,13 +19,21 @@ inputs:
     required: false
     default: "false"
   output:
-    description: "Output format: json, html, or both."
+    description: "Output format per year: json, html, or both."
     required: false
     default: "both"
   prepare-pages:
     description: "Set to 'true' to stage output under ./public/<year> and rebuild the multi-year index."
     required: false
     default: "true"
+  preserve-existing:
+    description: "Before generating, download the current live Pages site into ./public/ so previously published years are preserved."
+    required: false
+    default: "true"
+  pages-url:
+    description: "Override the live Pages URL used for preservation. Defaults to https://<owner>.github.io/<repo>."
+    required: false
+    default: ""
   upload-pages-artifact:
     description: "Set to 'true' to upload ./public as a Pages artifact (for use with actions/deploy-pages)."
     required: false
@@ -36,14 +48,14 @@ inputs:
     default: ${{ github.token }}
 
 outputs:
-  year:
-    description: "The year the report was generated for."
-    value: ${{ steps.params.outputs.year }}
+  years:
+    description: "Space-separated list of years actually generated."
+    value: ${{ steps.params.outputs.years }}
   owner:
     description: "The GitHub handle the report was generated for."
     value: ${{ steps.params.outputs.owner }}
   public-dir:
-    description: "Directory containing the staged Pages content (only set when prepare-pages='true')."
+    description: "Directory containing the staged Pages content."
     value: ./public
 
 runs:
@@ -82,64 +94,160 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        YEAR="${{ inputs.year }}"
-        if [ -z "$YEAR" ]; then
-          YEAR=$(( $(date -u +%Y) - 1 ))
+
+        # Resolve the list of years to generate. Precedence:
+        #   1. `years` input (comma-separated)
+        #   2. `year` input (single year)
+        #   3. Default: last year (UTC-now - 1)
+        RAW_YEARS="${{ inputs.years }}"
+        SINGLE_YEAR="${{ inputs.year }}"
+        YEARS=""
+
+        if [ -n "$RAW_YEARS" ]; then
+          # Strip spaces, split on commas, validate each token is 4 digits.
+          CLEANED=$(echo "$RAW_YEARS" | tr -d '[:space:]')
+          IFS=',' read -ra PARTS <<< "$CLEANED"
+          for P in "${PARTS[@]}"; do
+            if [[ "$P" =~ ^[0-9]{4}$ ]]; then
+              YEARS+="$P "
+            else
+              echo "::warning::Ignoring invalid year token: '$P'"
+            fi
+          done
+        elif [ -n "$SINGLE_YEAR" ]; then
+          if [[ "$SINGLE_YEAR" =~ ^[0-9]{4}$ ]]; then
+            YEARS="$SINGLE_YEAR"
+          else
+            echo "::error::Invalid year: '$SINGLE_YEAR' (expected 4 digits)"
+            exit 1
+          fi
+        else
+          YEARS=$(( $(date -u +%Y) - 1 ))
         fi
+
+        # Trim trailing whitespace.
+        YEARS=$(echo "$YEARS" | xargs)
+        if [ -z "$YEARS" ]; then
+          echo "::error::No valid years to generate."
+          exit 1
+        fi
+
         OWNER="${{ inputs.owner }}"
         if [ -z "$OWNER" ]; then
           OWNER="${{ github.actor }}"
         fi
-        echo "year=$YEAR"   >> "$GITHUB_OUTPUT"
+
+        echo "Resolved years: $YEARS"
+        echo "Resolved owner: $OWNER"
+        echo "years=$YEARS" >> "$GITHUB_OUTPUT"
         echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
 
-    - name: Generate DevWrapped
+    - name: Hydrate ./public from live Pages site
+      if: ${{ inputs.prepare-pages == 'true' && inputs.preserve-existing == 'true' }}
+      shell: bash
+      env:
+        PAGES_URL_OVERRIDE: ${{ inputs.pages-url }}
+      run: |
+        set -euo pipefail
+        mkdir -p public
+
+        # Derive the Pages URL unless explicitly overridden. GitHub Pages is
+        # case-insensitive for the owner segment, so we can safely use the
+        # repo owner as-is.
+        if [ -n "$PAGES_URL_OVERRIDE" ]; then
+          BASE="${PAGES_URL_OVERRIDE%/}"
+        else
+          BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+        fi
+
+        echo "Hydrating from: $BASE"
+
+        MANIFEST_HTTP=$(curl -s -o /tmp/years.json -w '%{http_code}' "$BASE/years.json" || echo 000)
+        if [ "$MANIFEST_HTTP" != "200" ]; then
+          echo "No existing years.json at $BASE/years.json (HTTP $MANIFEST_HTTP). Starting fresh."
+          exit 0
+        fi
+
+        # Extract year values with python (always available here) to avoid jq.
+        # Kept as a single-line invocation so YAML literal-block rules aren't
+        # disturbed by heredoc content.
+        YEARS_TO_FETCH=$(python -c 'import json; d=json.load(open("/tmp/years.json"));print("\n".join(str(e["year"]) for e in d.get("years",[]) if isinstance(e.get("year"), int) and 1970 <= e["year"] <= 9999))' || true)
+
+        if [ -z "$YEARS_TO_FETCH" ]; then
+          echo "Manifest found but contains no years. Starting fresh."
+          exit 0
+        fi
+
+        for Y in $YEARS_TO_FETCH; do
+          echo "  ↓ $Y"
+          mkdir -p "public/$Y"
+          for FILE in index.html wrapped.json og.png; do
+            URL="$BASE/$Y/$FILE"
+            # --fail: don't create output on 4xx/5xx; -o to a tmpfile first.
+            if curl -s --fail -o "public/$Y/$FILE.tmp" "$URL"; then
+              mv "public/$Y/$FILE.tmp" "public/$Y/$FILE"
+            else
+              rm -f "public/$Y/$FILE.tmp"
+              echo "    (no $FILE for $Y)"
+            fi
+          done
+        done
+
+        echo "Hydrated public/ with years: $YEARS_TO_FETCH"
+
+    - name: Generate DevWrapped for each year
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        DEVWRAPPED_SHARE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ steps.params.outputs.year }}/"
         DEVWRAPPED_LOG_JSON: "1"
       run: |
         set -euo pipefail
-        YEAR="${{ steps.params.outputs.year }}"
+
         OWNER="${{ steps.params.outputs.owner }}"
         ORG_FLAG=""
         if [ "${{ inputs.is-org }}" = "true" ]; then
           ORG_FLAG="--org"
         fi
+        OUTPUT_MODE="${{ inputs.output }}"
 
-        case "${{ inputs.output }}" in
-          json)
-            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.json
-            ;;
-          html)
-            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.html
-            ;;
-          both|*)
-            # HTML first so the JSON can carry the same heatmap payload.
-            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.html
-            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.json
-            ;;
-        esac
+        for YEAR in ${{ steps.params.outputs.years }}; do
+          echo "::group::📊 Generating DevWrapped for $YEAR"
 
-    - name: Prepare GitHub Pages content
+          export DEVWRAPPED_SHARE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${YEAR}/"
+
+          # Clean up any prior-run artefacts in the working dir.
+          rm -f wrapped.html wrapped.json wrapped-og.png
+
+          case "$OUTPUT_MODE" in
+            json)
+              devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.json --no-og
+              ;;
+            html)
+              devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.html
+              ;;
+            both|*)
+              # HTML first so the JSON can embed the same heatmap.
+              devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.html
+              devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.json --no-og
+              ;;
+          esac
+
+          if [ "${{ inputs.prepare-pages }}" = "true" ]; then
+            mkdir -p "public/$YEAR"
+            [ -f wrapped.html ] && mv wrapped.html "public/$YEAR/index.html"
+            [ -f wrapped.json ] && mv wrapped.json "public/$YEAR/wrapped.json"
+            [ -f wrapped-og.png ] && mv wrapped-og.png "public/$YEAR/og.png"
+          fi
+
+          echo "::endgroup::"
+        done
+
+    - name: Finalize Pages layout
       if: ${{ inputs.prepare-pages == 'true' }}
       shell: bash
       run: |
         set -euo pipefail
-        YEAR="${{ steps.params.outputs.year }}"
-        mkdir -p public/"$YEAR"
-        if [ -f wrapped.html ]; then
-          cp wrapped.html public/"$YEAR"/index.html
-        fi
-        if [ -f wrapped.json ]; then
-          cp wrapped.json public/"$YEAR"/wrapped.json
-        fi
-        if [ -f wrapped-og.png ]; then
-          cp wrapped-og.png public/"$YEAR"/og.png
-        fi
         devwrapped build-index --public-dir public
-
         # Jekyll would otherwise skip files/dirs that start with an underscore
         # or a dot; opt out explicitly.
         touch public/.nojekyll
@@ -153,12 +261,12 @@ runs:
       with:
         path: ./public
 
-    - name: Upload Wrapped workflow artifacts
+    - name: Upload workflow artifacts (per year)
       uses: actions/upload-artifact@v4
       with:
-        name: devwrapped-${{ steps.params.outputs.year }}
+        name: devwrapped-${{ steps.params.outputs.years }}
         path: |
-          wrapped.json
-          wrapped.html
-          wrapped-og.png
+          public/**/index.html
+          public/**/wrapped.json
+          public/**/og.png
         if-no-files-found: ignore
