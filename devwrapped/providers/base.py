@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+
 from devwrapped.model.events import Event
 
 
@@ -23,7 +23,7 @@ class Provider(ABC):
         pass
 
     @abstractmethod
-    def fetch_events(self, year: int) -> List[Event]:
+    def fetch_events(self, year: int) -> list[Event]:
         """
         Fetch all relevant events for the given year.
         """

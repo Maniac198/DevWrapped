@@ -2,16 +2,25 @@ name: "DevWrapped"
 description: "Generate Spotify Wrapped-style year-end developer stats"
 inputs:
   year:
-    description: "Year to generate Wrapped for"
-    required: true
-
+    description: "Year to generate Wrapped for (defaults to last year)."
+    required: false
+    default: ""
   owner:
-    description: "GitHub username or org"
-    required: true
-
+    description: "GitHub username or org. Defaults to the workflow actor."
+    required: false
+    default: ""
+  is-org:
+    description: "Set to 'true' if owner is an organization."
+    required: false
+    default: "false"
   output:
-    description: "Output format (json, html, or both)"
+    description: "Output format: json, html, or both."
+    required: false
     default: "both"
+  publish-pages:
+    description: "Set to 'true' to publish the HTML output to GitHub Pages."
+    required: false
+    default: "true"
 
 runs:
   using: "composite"
@@ -22,46 +31,84 @@ runs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.10"
+        python-version: "3.11"
+        cache: "pip"
 
     - name: Install DevWrapped
-      run: |
-        pip install .
       shell: bash
+      run: pip install .
+
+    - name: Resolve parameters
+      id: params
+      shell: bash
+      run: |
+        set -euo pipefail
+        YEAR="${{ inputs.year }}"
+        if [ -z "$YEAR" ]; then
+          YEAR=$(( $(date -u +%Y) - 1 ))
+        fi
+        OWNER="${{ inputs.owner }}"
+        if [ -z "$OWNER" ]; then
+          OWNER="${{ github.actor }}"
+        fi
+        echo "year=$YEAR"   >> "$GITHUB_OUTPUT"
+        echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
 
     - name: Generate DevWrapped
+      shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-        DEVWRAPPED_SHARE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${DEVWRAPPED_YEAR}/
+        DEVWRAPPED_SHARE_URL: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ steps.params.outputs.year }}/"
+        DEVWRAPPED_LOG_JSON: "1"
       run: |
-        if [ "${{ inputs.output }}" = "json" ]; then
-          devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.json
-        elif [ "${{ inputs.output }}" = "html" ]; then
-          devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.html
-        else
-          devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.json
-          devwrapped generate --provider github --owner ${{ inputs.owner }} --year ${{ inputs.year }} --output wrapped.html
+        set -euo pipefail
+        YEAR="${{ steps.params.outputs.year }}"
+        OWNER="${{ steps.params.outputs.owner }}"
+        ORG_FLAG=""
+        if [ "${{ inputs.is-org }}" = "true" ]; then
+          ORG_FLAG="--org"
         fi
-      shell: bash
+
+        case "${{ inputs.output }}" in
+          json)
+            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.json
+            ;;
+          html)
+            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.html
+            ;;
+          both|*)
+            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.json
+            devwrapped generate --provider github --owner "$OWNER" --year "$YEAR" $ORG_FLAG --output wrapped.html
+            ;;
+        esac
 
     - name: Prepare GitHub Pages content
-      run: |
-        YEAR=${DEVWRAPPED_YEAR}
-        mkdir -p public/$YEAR
-        cp wrapped.html public/$YEAR/index.html
+      if: ${{ inputs.publish-pages == 'true' }}
       shell: bash
-
+      run: |
+        set -euo pipefail
+        YEAR="${{ steps.params.outputs.year }}"
+        mkdir -p public/"$YEAR"
+        if [ -f wrapped.html ]; then
+          cp wrapped.html public/"$YEAR"/index.html
+        fi
+        if [ -f wrapped.json ]; then
+          cp wrapped.json public/"$YEAR"/wrapped.json
+        fi
 
     - name: Deploy to GitHub Pages
+      if: ${{ inputs.publish-pages == 'true' }}
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ github.token }}
         publish_dir: ./public
+        keep_files: true
 
-    # - name: Upload Wrapped artifacts
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: devwrapped-${{ inputs.year }}
-    #     path: |
-    #       wrapped.json
-    #       wrapped.html
+    - name: Upload Wrapped artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: devwrapped-${{ steps.params.outputs.year }}
+        path: |
+          wrapped.json
+          wrapped.html
+        if-no-files-found: ignore

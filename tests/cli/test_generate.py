@@ -1,14 +1,30 @@
+from datetime import datetime, timezone
+
 from typer.testing import CliRunner
 
 from devwrapped.cli import app
 from devwrapped.model.events import Event, EventType
-from datetime import datetime
 
 
-def test_generate_command(monkeypatch, tmp_path):
+def test_generate_command_writes_json(monkeypatch, tmp_path):
     runner = CliRunner()
 
+    monkeypatch.setenv("GITHUB_TOKEN", "fake")
+
+    # Stub out GitHubClient so it doesn't require network.
+    class FakeClient:
+        def get_authenticated_user(self):
+            return "tester"
+
+        def list_languages(self, owner, repo):
+            return {}
+
+    monkeypatch.setattr("devwrapped.cli.GitHubClient", lambda: FakeClient())
+
     class FakeProvider:
+        def __init__(self, *args, **kwargs):
+            pass
+
         def name(self):
             return "github"
 
@@ -16,31 +32,34 @@ def test_generate_command(monkeypatch, tmp_path):
             return [
                 Event(
                     type=EventType.COMMIT,
-                    actor="test",
-                    repo="test/repo",
-                    timestamp=datetime.utcnow(),
+                    actor="tester",
+                    repo="tester/repo",
+                    timestamp=datetime(year, 6, 1, 10, tzinfo=timezone.utc),
                     metadata={},
                 )
             ]
 
-    monkeypatch.setattr(
-        "devwrapped.cli.GitHubProvider",
-        lambda owner, repo: FakeProvider()
-    )
+    monkeypatch.setattr("devwrapped.cli.GitHubProvider", FakeProvider)
 
     output_file = tmp_path / "wrapped.json"
-
     result = runner.invoke(
         app,
         [
             "generate",
             "--provider", "github",
-            "--owner", "test",
             "--repo", "repo",
             "--year", "2024",
             "--output", str(output_file),
+            "--no-languages",
         ],
     )
 
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.stdout
     assert output_file.exists()
+
+
+def test_version_command():
+    runner = CliRunner()
+    result = runner.invoke(app, ["version"])
+    assert result.exit_code == 0
+    assert "DevWrapped" in result.stdout

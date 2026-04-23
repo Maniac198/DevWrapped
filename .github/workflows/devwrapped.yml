@@ -2,8 +2,16 @@ name: DevWrapped
 
 on:
   workflow_dispatch:
+    inputs:
+      year:
+        description: "Year (defaults to last year)"
+        required: false
+        default: ""
   schedule:
-    - cron: "0 0 1 1 *"   # Jan 1 every year
+    - cron: "0 0 1 1 *" # Jan 1 every year
+
+permissions:
+  contents: write
 
 jobs:
   wrapped:
@@ -11,6 +19,7 @@ jobs:
     steps:
       - uses: Maniac198/devwrapped/.github/actions/devwrapped@main
         with:
-          year: 2024
-          owner: Maniac198
+          year: ${{ github.event.inputs.year }}
+          owner: ${{ github.repository_owner }}
           output: both
+          publish-pages: "true"
