@@ -38,6 +38,13 @@ jobs:
     permissions:
       contents: read
     steps:
+      # A local composite action (uses: ./...) needs the repo checked out
+      # BEFORE it can be resolved — the inner checkout in the composite is
+      # too late. This is the fix for:
+      #   "Can't find 'action.yml' under '.github/actions/devwrapped'"
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Run DevWrapped
         uses: ./.github/actions/devwrapped
         with:
